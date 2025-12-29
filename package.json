@@ -1,0 +1,19 @@
+{
+  "name": "deepos",
+  "version": "1.0.0",
+  "description": "Enterprise-grade SaaS Point of Sale system",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:pos\" \"npm run dev:customer\"",
+    "dev:pos": "cd apps/pos && npm run dev",
+    "dev:customer": "cd apps/customer && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "npm run build:pos && npm run build:customer && npm run build:server",
+    "build:pos": "cd apps/pos && npm run build",
+    "build:customer": "cd apps/customer && npm run build",
+    "build:server": "cd server && npm run build",
+    "install:all": "npm install && cd apps/pos && npm install && cd ../customer && npm install && cd ../../server && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
