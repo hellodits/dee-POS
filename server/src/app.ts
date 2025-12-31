@@ -34,30 +34,9 @@ const PORT = process.env.PORT || 5000
 initializeSocket(httpServer)
 
 // ============ CORS CONFIGURATION ============
-const allowedOrigins = [
-  process.env.POS_CLIENT_URL || 'http://localhost:3000',
-  process.env.CUSTOMER_CLIENT_URL || 'http://localhost:4000',
-  'http://localhost:4000',
-  'http://localhost:3000',
-  'http://127.0.0.1:4000',
-  'http://127.0.0.1:3000',
-  // Add more origins as needed
-].filter(Boolean)
-
+// For production, allow all origins or specific ones
 const corsOptions: cors.CorsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) {
-      return callback(null, true)
-    }
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      console.warn(`CORS blocked origin: ${origin}`)
-      callback(new Error('Not allowed by CORS'))
-    }
-  },
+  origin: true, // Allow all origins in production (simpler approach)
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -89,8 +68,12 @@ app.use(morgan('dev'))
 // Serve static files (uploaded images)
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
-// Health check
+// Health check endpoints
 app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'DEEPOS API is running', socket: 'enabled' })
+})
+
+app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'DEEPOS API is running', socket: 'enabled' })
 })
 
