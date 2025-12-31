@@ -74,8 +74,14 @@ export interface Reservation {
 }
 
 // Create axios instance
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+  // Ensure URL ends with /api
+  return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`
+}
+
 const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: getBaseURL(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
