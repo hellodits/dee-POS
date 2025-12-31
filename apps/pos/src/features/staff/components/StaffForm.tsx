@@ -8,12 +8,13 @@ import { Staff, StaffFormData, StaffRole } from '../types'
 interface StaffFormProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (staff: Omit<Staff, 'id' | 'createdAt' | 'updatedAt'>) => void
+  onSave: (staff: Omit<Staff, 'id' | 'createdAt' | 'updatedAt'>, imageFile?: File | null) => void
   editingStaff: Staff | null
   isMobile: boolean
+  isSaving?: boolean
 }
 
-export function StaffForm({ isOpen, onClose, onSave, editingStaff, isMobile }: StaffFormProps) {
+export function StaffForm({ isOpen, onClose, onSave, editingStaff, isMobile, isSaving = false }: StaffFormProps) {
   const { t } = useTranslation()
   const [formData, setFormData] = useState<StaffFormData>({
     fullName: '',
@@ -28,6 +29,8 @@ export function StaffForm({ isOpen, onClose, onSave, editingStaff, isMobile }: S
     additionalDetails: '',
     profileImage: null
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [errors, setErrors] = useState<Partial<StaffFormData>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -48,6 +51,7 @@ export function StaffForm({ isOpen, onClose, onSave, editingStaff, isMobile }: S
         additionalDetails: editingStaff.additionalDetails || '',
         profileImage: null
       })
+      setImagePreview(editingStaff.profileImage || null)
     } else {
       setFormData({
         fullName: '',
@@ -62,7 +66,9 @@ export function StaffForm({ isOpen, onClose, onSave, editingStaff, isMobile }: S
         additionalDetails: '',
         profileImage: null
       })
+      setImagePreview(null)
     }
+    setImageFile(null)
     setErrors({})
   }, [editingStaff, isOpen])
 
@@ -146,14 +152,32 @@ export function StaffForm({ isOpen, onClose, onSave, editingStaff, isMobile }: S
         shiftEnd: formData.shiftEnd,
         address: formData.address.trim(),
         additionalDetails: formData.additionalDetails.trim(),
-        profileImage: editingStaff?.profileImage // Keep existing image for now
+        profileImage: editingStaff?.profileImage
       }
 
-      onSave(staffData)
+      onSave(staffData, imageFile)
     } catch (error) {
       console.error('Error saving staff:', error)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert(t('staff.photoTooLarge'))
+        return
+      }
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert(t('staff.invalidFileType'))
+        return
+      }
+      setImageFile(file)
+      setImagePreview(URL.createObjectURL(file))
     }
   }
 
@@ -365,6 +389,41 @@ export function StaffForm({ isOpen, onClose, onSave, editingStaff, isMobile }: S
                   {t('staff.additionalDetails')}
                 </h3>
                 
+                {/* Profile Image Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    {t('staff.profileImage')}
+                  </label>
+                  <div className="flex items-center gap-4">
+                    {imagePreview ? (
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-16 h-16 rounded-full object-cover border border-border"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                        <span className="text-2xl">{formData.fullName?.[0]?.toUpperCase() || '?'}</span>
+                      </div>
+                    )}
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                        id="profile-image-upload"
+                      />
+                      <label
+                        htmlFor="profile-image-upload"
+                        className="cursor-pointer inline-flex items-center px-3 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors"
+                      >
+                        {imagePreview ? t('staff.changePhoto') : t('staff.uploadPhoto')}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <textarea
                     value={formData.additionalDetails}
@@ -384,9 +443,9 @@ export function StaffForm({ isOpen, onClose, onSave, editingStaff, isMobile }: S
               <Button
                 type="submit"
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isSaving}
               >
-                {isSubmitting 
+                {(isSubmitting || isSaving)
                   ? t('common.saving') 
                   : editingStaff 
                     ? t('staff.updateStaff') 
@@ -398,7 +457,7 @@ export function StaffForm({ isOpen, onClose, onSave, editingStaff, isMobile }: S
                 variant="outline"
                 onClick={onClose}
                 className="w-full h-11"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isSaving}
               >
                 {t('common.cancel')}
               </Button>

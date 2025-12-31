@@ -21,7 +21,7 @@ export interface Order {
   tip: number;
   total: number;
   status: 'in-process' | 'ready' | 'completed' | 'cancelled';
-  paymentMethod?: 'cash' | 'card' | 'e-wallet';
+  paymentMethod?: string; // CASH, CARD, QRIS, TRANSFER from API
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -56,9 +56,10 @@ export interface PaymentData {
   tax: number;
   tip: number;
   total: number;
-  paymentMethod: 'cash' | 'card' | 'e-wallet';
+  paymentMethod: 'cash' | 'card' | 'e-wallet' | 'qris';
   received: number;
   change: number;
+  note?: string;
 }
 
 export type OrderStatus = 'all' | 'in-process' | 'completed' | 'cancelled';

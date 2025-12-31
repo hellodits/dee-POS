@@ -33,66 +33,71 @@ export const InventoryList: React.FC<InventoryListProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-6 flex-shrink-0">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Inventori Bahan Mentah</h1>
-            <p className="text-sm text-gray-600 mt-1">
+      <div className="bg-card border-b border-border p-4 sm:p-6 flex-shrink-0">
+        {/* Title Row */}
+        <div className="flex items-start sm:items-center justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Inventori Bahan Mentah</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
               {totalCount} total bahan
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={onAddNew}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Tambah Bahan</span>
-              <span className="sm:hidden">Tambah</span>
-            </button>
+          <button
+            onClick={onAddNew}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex-shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Tambah Bahan</span>
+            <span className="sm:hidden">Tambah</span>
+          </button>
+        </div>
+
+        {/* Status Badges - Mobile: Stack, Desktop: Row */}
+        {(lowStockCount > 0 || outOfStockCount > 0) && (
+          <div className="flex flex-wrap gap-2 mb-4">
             {lowStockCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="text-sm font-medium">{lowStockCount} Stok Rendah</span>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-sm">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span className="font-medium">{lowStockCount} Stok Rendah</span>
               </div>
             )}
             {outOfStockCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg">
-                <XCircle className="w-4 h-4" />
-                <span className="text-sm font-medium">{outOfStockCount} Habis</span>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 rounded-lg text-sm">
+                <XCircle className="w-3.5 h-3.5" />
+                <span className="font-medium">{outOfStockCount} Habis</span>
               </div>
             )}
           </div>
-        </div>
+        )}
 
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Cari item inventori..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            className="w-full pl-10 pr-4 py-2.5 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary text-sm"
           />
         </div>
       </div>
 
       {/* Items List */}
-      <div className="flex-1 p-6 bg-gray-50 overflow-y-auto">
+      <div className="flex-1 p-3 sm:p-6 bg-muted/30 overflow-y-auto">
         {items.length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-              <Package className="w-8 h-8 text-gray-400" />
+            <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+              <Package className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada bahan ditemukan</h3>
-            <p className="text-gray-500 mb-4">
+            <h3 className="text-lg font-medium text-foreground mb-2">Tidak ada bahan ditemukan</h3>
+            <p className="text-muted-foreground mb-4 text-sm">
               {searchQuery ? 'Coba sesuaikan pencarian atau filter Anda' : 'Belum ada data bahan mentah'}
             </p>
             {!searchQuery && (
               <button
                 onClick={onAddNew}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Tambah Bahan Pertama
@@ -100,7 +105,7 @@ export const InventoryList: React.FC<InventoryListProps> = ({
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {items.map((item) => (
               <InventoryItem
                 key={item.id}

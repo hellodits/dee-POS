@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Minus, ShoppingCart, Edit2, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Minus, ShoppingCart, Edit2, Loader2, X } from 'lucide-react';
 import { useOrderStore } from '../hooks/useOrderStore';
 import { MenuItem, Table } from '../types';
 import { productsApi, tablesApi } from '@/lib/api';
@@ -196,6 +196,7 @@ export const POSPage: React.FC<POSPageProps> = ({
       {/* Header - Fixed */}
       <div className="flex-shrink-0 bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-center space-x-3">
+          {/* Sidebar Toggle - Left side */}
           <button
             onClick={onToggleSidebar}
             className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
@@ -203,13 +204,8 @@ export const POSPage: React.FC<POSPageProps> = ({
           >
             {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
           </button>
-          <button
-            onClick={onBackToDashboard}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
-            title="Back to dashboard"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
+          
+          {/* Title - Center */}
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Point of Sale</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -231,6 +227,15 @@ export const POSPage: React.FC<POSPageProps> = ({
               )}
             </button>
           )}
+
+          {/* Close/Back Button - Right side with X icon */}
+          <button
+            onClick={onBackToDashboard}
+            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Tutup & Kembali"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
       </div>
 

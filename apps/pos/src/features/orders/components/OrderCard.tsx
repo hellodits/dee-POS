@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, Trash2, Clock, User, MapPin } from 'lucide-react';
+import { Edit, Trash2, Clock, User, MapPin, CreditCard, Banknote, CheckCircle } from 'lucide-react';
 import { Order } from '../types';
 import { formatCurrency, formatTime, getTimeSince } from '../data/ordersData';
 
@@ -46,11 +46,41 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     }
   };
 
+  const getPaymentMethodIcon = (method?: string) => {
+    const m = method?.toUpperCase();
+    switch (m) {
+      case 'CASH':
+        return <Banknote className="w-3.5 h-3.5" />;
+      default:
+        return <CreditCard className="w-3.5 h-3.5" />;
+    }
+  };
+
+  const getPaymentMethodLabel = (method?: string) => {
+    const m = method?.toUpperCase();
+    switch (m) {
+      case 'CASH':
+        return 'Cash';
+      case 'CARD':
+        return 'Kartu Debit/Kredit';
+      case 'QRIS':
+        return 'QRIS';
+      case 'TRANSFER':
+        return 'Transfer Bank';
+      case 'E-WALLET':
+        return 'E-Wallet';
+      default:
+        return method || '-';
+    }
+  };
+
   const displayItems = order.items.slice(0, 3);
   const remainingCount = order.items.length - 3;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow overflow-hidden">
+    <div className={`bg-white rounded-lg border p-4 hover:shadow-md transition-shadow overflow-hidden ${
+      order.status === 'completed' ? 'border-green-200' : 'border-gray-200'
+    }`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
@@ -126,11 +156,50 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         </div>
       </div>
 
-      {/* Subtotal */}
-      <div className="flex justify-between items-center mb-3 pt-2 border-t border-gray-200">
-        <span className="text-xs font-medium text-gray-700">Subtotal</span>
-        <span className="text-base font-bold text-gray-900">{formatCurrency(order.subtotal)}</span>
-      </div>
+      {/* Payment Info for Completed Orders */}
+      {order.status === 'completed' && (
+        <div className="mb-3 p-3 bg-green-50 rounded-lg border border-green-100">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span className="text-xs font-semibold text-green-700">Pembayaran Selesai</span>
+          </div>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between text-gray-600">
+              <span>Subtotal</span>
+              <span>{formatCurrency(order.subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Pajak (10%)</span>
+              <span>{formatCurrency(order.tax)}</span>
+            </div>
+            {order.tip > 0 && (
+              <div className="flex justify-between text-gray-600">
+                <span>Service</span>
+                <span>{formatCurrency(order.tip)}</span>
+              </div>
+            )}
+            <div className="flex justify-between pt-1.5 border-t border-green-200">
+              <span className="font-semibold text-green-800">Total</span>
+              <span className="font-bold text-green-800">{formatCurrency(order.total)}</span>
+            </div>
+            <div className="flex items-center justify-between pt-1.5 border-t border-green-200">
+              <span className="text-gray-600">Metode</span>
+              <div className="flex items-center gap-1 text-green-700 font-medium">
+                {getPaymentMethodIcon(order.paymentMethod)}
+                <span>{getPaymentMethodLabel(order.paymentMethod)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Subtotal for non-completed orders */}
+      {order.status !== 'completed' && (
+        <div className="flex justify-between items-center mb-3 pt-2 border-t border-gray-200">
+          <span className="text-xs font-medium text-gray-700">Subtotal</span>
+          <span className="text-base font-bold text-gray-900">{formatCurrency(order.subtotal)}</span>
+        </div>
+      )}
 
       {/* Actions */}
       <div>
@@ -149,9 +218,9 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           </div>
         )}
         
-        {order.status === 'completed' && (
-          <div className="w-full px-3 py-2 bg-green-50 text-green-700 rounded-lg text-center font-medium text-sm">
-            Completed
+        {order.status === 'completed' && order.completedAt && (
+          <div className="text-xs text-center text-gray-500">
+            Selesai: {formatTime(order.completedAt)}
           </div>
         )}
         
@@ -163,9 +232,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
       </div>
 
       {/* Order Time */}
-      <div className="mt-2 text-xs text-gray-400 text-center">
-        {formatTime(order.createdAt)}
-      </div>
+      {order.status !== 'completed' && (
+        <div className="mt-2 text-xs text-gray-400 text-center">
+          {formatTime(order.createdAt)}
+        </div>
+      )}
     </div>
   );
 };

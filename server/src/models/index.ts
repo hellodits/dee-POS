@@ -16,3 +16,5 @@ export {
 export { InventoryLog, IInventoryLog, InventoryChangeReason } from './InventoryLog'
 export { Reservation, IReservation, ReservationStatus } from './Reservation'
 export { Inventory, IInventory } from './Inventory'
+export { Transaction, ITransaction, TransactionType } from './Transaction'
+export { Notification, INotification, NotificationType, NotificationPriority } from './Notification'

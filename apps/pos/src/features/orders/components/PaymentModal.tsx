@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { X, CreditCard, Smartphone, Banknote, Receipt, QrCode, Printer, Check } from 'lucide-react';
 import { Order, PaymentData } from '../types';
 import { formatCurrency } from '../data/ordersData';
@@ -19,9 +19,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [tip, setTip] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'e-wallet' | 'qris'>('cash');
   const [received, setReceived] = useState(0);
+  const [note, setNote] = useState('');
   const [isPrinting, setIsPrinting] = useState(false);
   const [printSuccess, setPrintSuccess] = useState(false);
-  const receiptRef = useRef<HTMLDivElement>(null);
 
   const subtotal = order.subtotal;
   const tax = order.tax;
@@ -49,6 +49,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       paymentMethod,
       received: paymentMethod === 'cash' ? received : total,
       change: paymentMethod === 'cash' ? Math.max(0, change) : 0,
+      note: note.trim() || undefined,
     };
 
     onComplete(paymentData);
@@ -57,6 +58,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     // Reset state
     setTip(0);
     setReceived(0);
+    setNote('');
     setPaymentMethod('cash');
     setPrintSuccess(false);
   };
@@ -277,6 +279,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <span className="text-red-600">{formatCurrency(total)}</span>
                     </div>
                   </div>
+                </div>
+
+                {/* Note Input */}
+                <div className="mt-3">
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Catatan pembayaran (opsional)"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 placeholder:text-gray-400"
+                    maxLength={100}
+                  />
                 </div>
               </div>
 

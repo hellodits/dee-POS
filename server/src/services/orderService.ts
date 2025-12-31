@@ -3,6 +3,7 @@ import { Order, IOrder, IOrderItem, OrderSource, PaymentMethod } from '../models
 import { Product } from '../models/Product'
 import { Table } from '../models/Table'
 import { InventoryLog } from '../models/InventoryLog'
+import { Transaction } from '../models/Transaction'
 import { Types } from 'mongoose'
 
 // Tax rate (10%)
@@ -359,25 +360,69 @@ export async function updateOrderStatus(
 }
 
 /**
- * Process Payment
+ * Process Payment - Creates Transaction document for financial reporting
  */
 export async function processPayment(
   orderId: string,
   paymentMethod: PaymentMethod,
+  amountPaid: number,
   userId?: string
-): Promise<IOrder | null> {
-  return Order.findByIdAndUpdate(
+): Promise<{ order: IOrder | null; transaction: any }> {
+  const order = await Order.findById(orderId)
+  
+  if (!order) {
+    return { order: null, transaction: null }
+  }
+
+  // Validate amount
+  if (amountPaid < order.financials.total) {
+    throw new Error(`Insufficient payment. Required: ${order.financials.total}, Received: ${amountPaid}`)
+  }
+
+  // Validate order is not already paid
+  if (order.payment_status === 'PAID') {
+    throw new Error('Order is already paid')
+  }
+
+  // Update order payment status and set status to COMPLETED
+  const updatedOrder = await Order.findByIdAndUpdate(
     orderId,
     {
       payment_status: 'PAID',
-      payment_method: paymentMethod
+      payment_method: paymentMethod,
+      status: 'COMPLETED',
+      completed_at: new Date()
     },
     { new: true }
   )
+
+  // Release table if order has table
+  if (order.table_id) {
+    await Table.findByIdAndUpdate(order.table_id, {
+      status: 'Available',
+      current_order_id: null
+    })
+  }
+
+  // Create Transaction document for financial reporting (separate from Order)
+  const transaction = await Transaction.create({
+    order_id: order._id,
+    order_number: order.order_number,
+    type: 'SALE',
+    payment_method: paymentMethod,
+    amount: order.financials.total,
+    subtotal: order.financials.subtotal,
+    tax: order.financials.tax,
+    service_charge: order.financials.service_charge,
+    discount: order.financials.discount,
+    user_id: userId ? new Types.ObjectId(userId) : undefined
+  })
+
+  return { order: updatedOrder, transaction }
 }
 
 /**
- * Void Order - Restore stock
+ * Void Order - Restore stock and create REFUND/VOID transaction
  */
 export async function voidOrder(orderId: string, userId: string): Promise<IOrder | null> {
   const order = await Order.findById(orderId)
@@ -406,9 +451,27 @@ export async function voidOrder(orderId: string, userId: string): Promise<IOrder
     }
   }
 
+  // Create REFUND or VOID transaction if order was paid
+  const wasPaid = order.payment_status === 'PAID'
+  if (wasPaid) {
+    await Transaction.create({
+      order_id: order._id,
+      order_number: order.order_number,
+      type: 'REFUND',
+      payment_method: order.payment_method || 'CASH',
+      amount: -order.financials.total, // Negative for refund
+      subtotal: -order.financials.subtotal,
+      tax: -order.financials.tax,
+      service_charge: -order.financials.service_charge,
+      discount: -order.financials.discount,
+      user_id: new Types.ObjectId(userId),
+      notes: 'Order voided'
+    })
+  }
+
   // Update order status
   order.status = 'CANCELLED'
-  if (order.payment_status === 'PAID') {
+  if (wasPaid) {
     order.payment_status = 'REFUNDED'
   }
   await order.save()

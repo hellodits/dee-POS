@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Plus, Search, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Search, Trash2, Eye, EyeOff, Loader2, RefreshCw } from 'lucide-react';
 import { NewUserFormData, UserPermission } from '../types';
 import { useProfile } from '../hooks/useProfile';
 import { getRoleBadgeColor, getRoleLabel, getPermissionLabel, formatLastLogin } from '../data/profileData';
 
 export function ManageAccessView() {
-  const { users, addUser, deleteUser, updateUserPermissions, isLoading } = useProfile();
+  const { users, addUser, deleteUser, updateUserPermissions, isLoading, fetchUsers } = useProfile();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
@@ -36,12 +36,12 @@ export function ManageAccessView() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      setMessage({ type: 'error', text: 'Passwords do not match' });
+      setMessage({ type: 'error', text: 'Password tidak cocok' });
       return;
     }
     
     if (formData.password.length < 6) {
-      setMessage({ type: 'error', text: 'Password must be at least 6 characters' });
+      setMessage({ type: 'error', text: 'Password minimal 6 karakter' });
       return;
     }
 
@@ -65,7 +65,7 @@ export function ManageAccessView() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm('Apakah Anda yakin ingin menghapus user ini?')) {
       const result = await deleteUser(userId);
       setMessage({
         type: result.success ? 'success' : 'error',
@@ -79,7 +79,10 @@ export function ManageAccessView() {
     if (!user) return;
 
     const newValue = !user.permissions[permission];
-    await updateUserPermissions(userId, { [permission]: newValue });
+    const result = await updateUserPermissions(userId, { [permission]: newValue });
+    if (!result.success) {
+      setMessage({ type: 'error', text: result.message });
+    }
   };
 
   const togglePasswordVisibility = (field: string) => {
@@ -91,16 +94,26 @@ export function ManageAccessView() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Manage Access</h2>
-          <p className="text-gray-600 mt-1">Control user permissions and access levels</p>
+          <h2 className="text-2xl font-semibold text-gray-900">Kelola Akses</h2>
+          <p className="text-gray-600 mt-1">Kontrol izin dan level akses pengguna</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add User</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchUsers()}
+            disabled={isLoading}
+            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tambah User</span>
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -108,7 +121,7 @@ export function ManageAccessView() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Search users..."
+          placeholder="Cari user..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
@@ -119,7 +132,7 @@ export function ManageAccessView() {
       {showAddForm && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Add New User</h3>
+            <h3 className="text-lg font-medium text-gray-900">Tambah User Baru</h3>
             <button
               onClick={() => setShowAddForm(false)}
               className="text-gray-400 hover:text-gray-600"
@@ -132,7 +145,7 @@ export function ManageAccessView() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name
+                  Nama Depan
                 </label>
                 <input
                   type="text"
@@ -145,7 +158,7 @@ export function ManageAccessView() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name
+                  Nama Belakang
                 </label>
                 <input
                   type="text"
@@ -153,7 +166,6 @@ export function ManageAccessView() {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
-                  required
                 />
               </div>
               <div>
@@ -179,7 +191,8 @@ export function ManageAccessView() {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
                 >
-                  <option value="cashier">Cashier</option>
+                  <option value="cashier">Kasir</option>
+                  <option value="kitchen">Dapur</option>
                   <option value="manager">Manager</option>
                   <option value="admin">Administrator</option>
                 </select>
@@ -208,7 +221,7 @@ export function ManageAccessView() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
+                  Konfirmasi Password
                 </label>
                 <div className="relative">
                   <input
@@ -236,14 +249,15 @@ export function ManageAccessView() {
                 onClick={() => setShowAddForm(false)}
                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                Batal
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                {isLoading ? 'Adding...' : 'Add User'}
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isLoading ? 'Menyimpan...' : 'Tambah User'}
               </button>
             </div>
           </form>
@@ -263,89 +277,98 @@ export function ManageAccessView() {
 
       {/* Users List */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="divide-y divide-gray-200">
-          {filteredUsers.map((user) => (
-            <div key={user.id} className="p-6">
-              {/* User Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-red-100 text-red-600 font-semibold">
-                        {user.firstName[0]}{user.lastName[0]}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      {user.firstName} {user.lastName}
-                    </h3>
-                    <p className="text-sm text-gray-600">{user.email}</p>
-                    <div className="flex items-center space-x-3 mt-1">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getRoleBadgeColor(user.role)}`}>
-                        {getRoleLabel(user.role)}
-                      </span>
-                      {user.lastLogin && (
-                        <span className="text-xs text-gray-500">
-                          Last login: {formatLastLogin(user.lastLogin)}
-                        </span>
+        {isLoading && users.length === 0 ? (
+          <div className="p-8 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-gray-400" />
+            <p className="mt-2 text-gray-500">Memuat data user...</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {filteredUsers.map((user) => (
+              <div key={user.id} className="p-6">
+                {/* User Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-red-100 text-red-600 font-semibold">
+                          {user.firstName[0]}{user.lastName?.[0] || ''}
+                        </div>
                       )}
                     </div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
-                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    {expandedUser === user.id ? 'Hide' : 'Permissions'}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteUser(user.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Permissions Panel */}
-              {expandedUser === user.id && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Permissions</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {Object.entries(user.permissions).map(([permission, enabled]) => (
-                      <div key={permission} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm text-gray-700">
-                          {getPermissionLabel(permission)}
+                    <div>
+                      <h3 className="font-medium text-gray-900">
+                        {user.firstName} {user.lastName}
+                      </h3>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <div className="flex items-center space-x-3 mt-1">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getRoleBadgeColor(user.role)}`}>
+                          {getRoleLabel(user.role)}
                         </span>
-                        <button
-                          onClick={() => handlePermissionToggle(user.id, permission as keyof UserPermission)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            enabled ? 'bg-red-600' : 'bg-gray-300'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              enabled ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
+                        {user.lastLogin && (
+                          <span className="text-xs text-gray-500">
+                            Login terakhir: {formatLastLogin(user.lastLogin)}
+                          </span>
+                        )}
                       </div>
-                    ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
+                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {expandedUser === user.id ? 'Tutup' : 'Permissions'}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+
+                {/* Permissions Panel */}
+                {expandedUser === user.id && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Permissions</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {Object.entries(user.permissions).map(([permission, enabled]) => (
+                        <div key={permission} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm text-gray-700">
+                            {getPermissionLabel(permission)}
+                          </span>
+                          <button
+                            onClick={() => handlePermissionToggle(user.id, permission as keyof UserPermission)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              enabled ? 'bg-red-600' : 'bg-gray-300'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                enabled ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {filteredUsers.length === 0 && (
+      {!isLoading && filteredUsers.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500">No users found matching your search.</p>
+          <p className="text-gray-500">
+            {searchTerm ? 'Tidak ada user yang cocok dengan pencarian.' : 'Belum ada user.'}
+          </p>
         </div>
       )}
     </div>

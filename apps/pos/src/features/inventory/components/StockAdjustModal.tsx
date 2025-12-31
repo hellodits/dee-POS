@@ -17,7 +17,7 @@ const STOCK_REASONS = [
   { value: 'EXPIRED', label: 'Kadaluarsa' },
   { value: 'LOST', label: 'Hilang' },
   { value: 'RETURN', label: 'Retur ke Supplier' },
-  { value: 'WASTE', label: 'Terbuang' },
+  { value: 'WASTAGE', label: 'Terbuang' },
   { value: 'OTHER', label: 'Lainnya' },
 ];
 

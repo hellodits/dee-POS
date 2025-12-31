@@ -1,6 +1,10 @@
 import { Order } from '../models/Order'
 import { InventoryLog } from '../models/InventoryLog'
 import { Product } from '../models/Product'
+import { Transaction } from '../models/Transaction'
+import { Reservation } from '../models/Reservation'
+import { Attendance } from '../models/Staff'
+import { User } from '../models/User'
 
 interface DateRange {
   start: Date
@@ -328,4 +332,472 @@ export async function getCategoryPerformance(dateRange: DateRange) {
   ])
 
   return pipeline
+}
+
+
+/**
+ * TRANSACTION-BASED FINANCIAL REPORT
+ * Uses Transaction collection for accurate financial reporting
+ * Aggregation Pipeline - NO JS loops
+ */
+export async function getTransactionReport(dateRange: DateRange) {
+  // Total revenue from transactions
+  const summary = await Transaction.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: dateRange.start, $lte: dateRange.end }
+      }
+    },
+    {
+      $group: {
+        _id: '$type',
+        total_amount: { $sum: '$amount' },
+        total_tax: { $sum: '$tax' },
+        total_service: { $sum: '$service_charge' },
+        total_discount: { $sum: '$discount' },
+        count: { $sum: 1 }
+      }
+    }
+  ])
+
+  // By payment method
+  const byPaymentMethod = await Transaction.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: dateRange.start, $lte: dateRange.end },
+        type: 'SALE'
+      }
+    },
+    {
+      $group: {
+        _id: '$payment_method',
+        total: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        method: '$_id',
+        total: 1,
+        count: 1
+      }
+    },
+    { $sort: { total: -1 } }
+  ])
+
+  // Daily breakdown
+  const dailyBreakdown = await Transaction.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: dateRange.start, $lte: dateRange.end },
+        type: 'SALE'
+      }
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+        revenue: { $sum: '$amount' },
+        tax_collected: { $sum: '$tax' },
+        transactions: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        date: '$_id',
+        revenue: 1,
+        tax_collected: 1,
+        transactions: 1
+      }
+    },
+    { $sort: { date: 1 } }
+  ])
+
+  // Calculate totals
+  const sales = summary.find(s => s._id === 'SALE') || { total_amount: 0, count: 0 }
+  const refunds = summary.find(s => s._id === 'REFUND') || { total_amount: 0, count: 0 }
+
+  return {
+    net_revenue: sales.total_amount + refunds.total_amount, // refunds are negative
+    gross_sales: sales.total_amount,
+    refunds: Math.abs(refunds.total_amount),
+    total_transactions: sales.count,
+    total_refunds: refunds.count,
+    by_payment_method: byPaymentMethod,
+    daily_breakdown: dailyBreakdown
+  }
+}
+
+/**
+ * CASHIER PERFORMANCE REPORT
+ * Track sales by user/cashier
+ */
+export async function getCashierPerformance(dateRange: DateRange) {
+  return Transaction.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: dateRange.start, $lte: dateRange.end },
+        type: 'SALE',
+        user_id: { $exists: true }
+      }
+    },
+    {
+      $group: {
+        _id: '$user_id',
+        total_sales: { $sum: '$amount' },
+        transactions: { $sum: 1 },
+        avg_transaction: { $avg: '$amount' }
+      }
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    { $unwind: '$user' },
+    {
+      $project: {
+        _id: 0,
+        user_id: '$_id',
+        username: '$user.username',
+        total_sales: 1,
+        transactions: 1,
+        avg_transaction: { $round: ['$avg_transaction', 0] }
+      }
+    },
+    { $sort: { total_sales: -1 } }
+  ])
+}
+
+
+/**
+ * RESERVATION REPORT
+ * Aggregation for reservation statistics
+ */
+export async function getReservationReport(dateRange: DateRange) {
+  // Summary by status
+  const byStatus = await Reservation.aggregate([
+    {
+      $match: {
+        date: { $gte: dateRange.start, $lte: dateRange.end }
+      }
+    },
+    {
+      $group: {
+        _id: '$status',
+        count: { $sum: 1 },
+        total_pax: { $sum: '$pax' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        status: '$_id',
+        count: 1,
+        total_pax: 1
+      }
+    }
+  ])
+
+  // Daily breakdown
+  const dailyBreakdown = await Reservation.aggregate([
+    {
+      $match: {
+        date: { $gte: dateRange.start, $lte: dateRange.end }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          date: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+          status: '$status'
+        },
+        count: { $sum: 1 },
+        total_pax: { $sum: '$pax' }
+      }
+    },
+    {
+      $group: {
+        _id: '$_id.date',
+        statuses: {
+          $push: {
+            status: '$_id.status',
+            count: '$count',
+            total_pax: '$total_pax'
+          }
+        },
+        total: { $sum: '$count' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        date: '$_id',
+        statuses: 1,
+        total: 1
+      }
+    },
+    { $sort: { date: 1 } }
+  ])
+
+  // Recent reservations list
+  const recentReservations = await Reservation.find({
+    date: { $gte: dateRange.start, $lte: dateRange.end }
+  })
+  .select('guest_name whatsapp date time pax status createdAt')
+  .sort({ date: -1, time: -1 })
+  .limit(50)
+  .lean()
+
+  // Calculate totals
+  const totals = byStatus.reduce((acc, item) => {
+    acc.total += item.count
+    acc.total_pax += item.total_pax
+    if (item.status === 'APPROVED' || item.status === 'COMPLETED') {
+      acc.confirmed += item.count
+    } else if (item.status === 'PENDING') {
+      acc.pending += item.count
+    } else if (item.status === 'CANCELLED' || item.status === 'REJECTED') {
+      acc.cancelled += item.count
+    }
+    return acc
+  }, { total: 0, total_pax: 0, confirmed: 0, pending: 0, cancelled: 0 })
+
+  return {
+    summary: totals,
+    by_status: byStatus,
+    daily_breakdown: dailyBreakdown,
+    recent_reservations: recentReservations
+  }
+}
+
+/**
+ * STAFF PERFORMANCE REPORT
+ * Combines attendance data with sales performance
+ */
+export async function getStaffReport(dateRange: DateRange) {
+  // Get all active staff
+  const staff = await User.find({ isActive: true })
+    .select('username role')
+    .lean()
+
+  // Get attendance summary per staff
+  const attendanceSummary = await Attendance.aggregate([
+    {
+      $match: {
+        date: { $gte: dateRange.start, $lte: dateRange.end }
+      }
+    },
+    {
+      $group: {
+        _id: '$staff_id',
+        total_days: { $sum: 1 },
+        present_days: {
+          $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] }
+        },
+        late_days: {
+          $sum: { $cond: [{ $eq: ['$status', 'late'] }, 1, 0] }
+        },
+        absent_days: {
+          $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] }
+        },
+        total_hours: {
+          $sum: {
+            $cond: [
+              { $and: ['$check_in', '$check_out'] },
+              {
+                $divide: [
+                  { $subtract: ['$check_out', '$check_in'] },
+                  3600000 // Convert ms to hours
+                ]
+              },
+              0
+            ]
+          }
+        }
+      }
+    }
+  ])
+
+  // Get sales performance per staff (cashier)
+  const salesPerformance = await Transaction.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: dateRange.start, $lte: dateRange.end },
+        type: 'SALE',
+        user_id: { $exists: true }
+      }
+    },
+    {
+      $group: {
+        _id: '$user_id',
+        total_sales: { $sum: '$amount' },
+        total_transactions: { $sum: 1 },
+        avg_transaction: { $avg: '$amount' }
+      }
+    }
+  ])
+
+  // Get orders handled per staff
+  const ordersHandled = await Order.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: dateRange.start, $lte: dateRange.end },
+        user_id: { $exists: true }
+      }
+    },
+    {
+      $group: {
+        _id: '$user_id',
+        total_orders: { $sum: 1 }
+      }
+    }
+  ])
+
+  // Combine all data
+  const staffReport = staff.map(s => {
+    const attendance = attendanceSummary.find(a => a._id?.toString() === s._id.toString())
+    const sales = salesPerformance.find(sp => sp._id?.toString() === s._id.toString())
+    const orders = ordersHandled.find(o => o._id?.toString() === s._id.toString())
+
+    return {
+      staff_id: s._id,
+      username: s.username,
+      role: s.role,
+      attendance: {
+        total_days: attendance?.total_days || 0,
+        present_days: attendance?.present_days || 0,
+        late_days: attendance?.late_days || 0,
+        absent_days: attendance?.absent_days || 0,
+        total_hours: Math.round((attendance?.total_hours || 0) * 100) / 100
+      },
+      performance: {
+        total_orders: orders?.total_orders || 0,
+        total_sales: sales?.total_sales || 0,
+        total_transactions: sales?.total_transactions || 0,
+        avg_transaction: Math.round(sales?.avg_transaction || 0)
+      }
+    }
+  })
+
+  // Summary
+  const summary = {
+    total_staff: staff.length,
+    total_hours_worked: staffReport.reduce((sum, s) => sum + s.attendance.total_hours, 0),
+    total_sales: staffReport.reduce((sum, s) => sum + s.performance.total_sales, 0),
+    total_orders: staffReport.reduce((sum, s) => sum + s.performance.total_orders, 0)
+  }
+
+  return {
+    summary,
+    staff: staffReport
+  }
+}
+
+/**
+ * MONTHLY CHART DATA
+ * For revenue/reservation charts by month
+ */
+export async function getMonthlyRevenueChart(dateRange: DateRange) {
+  const pipeline = await Order.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: dateRange.start, $lte: dateRange.end },
+        status: 'COMPLETED',
+        payment_status: 'PAID'
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' }
+        },
+        total: { $sum: '$financials.total' },
+        orders: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        year: '$_id.year',
+        month: '$_id.month',
+        total: 1,
+        orders: 1
+      }
+    },
+    { $sort: { year: 1, month: 1 } }
+  ])
+
+  // Convert to month names
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  return pipeline.map(item => ({
+    month: monthNames[item.month - 1],
+    total: item.total,
+    orders: item.orders
+  }))
+}
+
+export async function getMonthlyReservationChart(dateRange: DateRange) {
+  const pipeline = await Reservation.aggregate([
+    {
+      $match: {
+        date: { $gte: dateRange.start, $lte: dateRange.end }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$date' },
+          month: { $month: '$date' },
+          status: '$status'
+        },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: '$_id.year',
+          month: '$_id.month'
+        },
+        statuses: {
+          $push: {
+            status: '$_id.status',
+            count: '$count'
+          }
+        },
+        total: { $sum: '$count' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        year: '$_id.year',
+        month: '$_id.month',
+        statuses: 1,
+        total: 1
+      }
+    },
+    { $sort: { year: 1, month: 1 } }
+  ])
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  return pipeline.map(item => {
+    const confirmed = item.statuses.find((s: { status: string; count: number }) => s.status === 'APPROVED' || s.status === 'COMPLETED')?.count || 0
+    const pending = item.statuses.find((s: { status: string; count: number }) => s.status === 'PENDING')?.count || 0
+    const cancelled = item.statuses.find((s: { status: string; count: number }) => s.status === 'CANCELLED' || s.status === 'REJECTED')?.count || 0
+
+    return {
+      month: monthNames[item.month - 1],
+      confirmed,
+      pending,
+      cancelled,
+      total: item.total
+    }
+  })
 }

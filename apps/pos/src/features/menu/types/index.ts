@@ -36,6 +36,7 @@ export interface CategoryFormData {
 export interface MenuItemFormData {
   name: string;
   image: string;
+  imageFile?: File | null; // For file upload
   price: number;
   stock: number;
   categoryId: string;

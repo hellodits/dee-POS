@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight, Upload, ChevronDown, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronRight, Upload, ChevronDown, Loader2, X, Image as ImageIcon } from 'lucide-react';
 import { InventoryItem, InventoryFormData, INVENTORY_CATEGORIES, INVENTORY_UNITS } from '../types';
 
 interface InventoryFormProps {
@@ -30,11 +30,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
     is_perishable: false,
     storage_location: '',
     image_url: '',
+    imageFile: null,
   });
 
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isUnitDropdownOpen, setIsUnitDropdownOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Reset form when drawer opens/closes or editing item changes
   useEffect(() => {
@@ -55,7 +59,9 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
           is_perishable: editingItem.perishable,
           storage_location: editingItem.storageLocation || '',
           image_url: editingItem.image || '',
+          imageFile: null,
         });
+        setImagePreview(editingItem.image || null);
       } else {
         setFormData({
           name: '',
@@ -72,7 +78,9 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
           is_perishable: false,
           storage_location: '',
           image_url: '',
+          imageFile: null,
         });
+        setImagePreview(null);
       }
     }
   }, [isOpen, editingItem]);
@@ -91,6 +99,68 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
 
   const handleInputChange = (field: keyof InventoryFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Handle file selection
+  const handleFileSelect = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Hanya file gambar yang diperbolehkan');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran file maksimal 5MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Store file for upload
+    handleInputChange('imageFile', file);
+    handleInputChange('image_url', '');
+  };
+
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  // Remove selected image
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    handleInputChange('imageFile', null);
+    handleInputChange('image_url', '');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   if (!isOpen) return null;
@@ -127,36 +197,70 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Gambar Bahan
                 </label>
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 overflow-hidden">
-                    {formData.image_url ? (
-                      <img
-                        src={formData.image_url}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.parentElement!.innerHTML = '<div class="w-6 h-6 text-gray-400"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg></div>';
-                        }}
-                      />
-                    ) : (
-                      <Upload className="w-6 h-6 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="url"
-                      placeholder="Masukkan URL gambar"
-                      value={formData.image_url}
-                      onChange={(e) => handleInputChange('image_url', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                
+                {/* Image Preview or Upload Area */}
+                {imagePreview ? (
+                  <div className="relative w-full h-40 rounded-lg overflow-hidden border-2 border-gray-200">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
                     />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black bg-opacity-50 text-white text-xs rounded">
+                      {formData.imageFile ? formData.imageFile.name : 'Gambar saat ini'}
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`w-full h-40 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors ${
+                      isDragging 
+                        ? 'border-red-500 bg-red-50' 
+                        : 'border-gray-300 hover:border-red-400 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="p-3 bg-gray-100 rounded-full mb-3">
+                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">
+                      Klik atau drag & drop gambar
+                    </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Masukkan URL gambar bahan mentah
+                      PNG, JPG, WEBP (Maks. 5MB)
                     </p>
                   </div>
-                </div>
+                )}
+
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                />
+
+                {/* Change image button when preview exists */}
+                {imagePreview && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-2 w-full px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Ganti Gambar
+                  </button>
+                )}
               </div>
 
               {/* Name */}

@@ -92,6 +92,18 @@ api.interceptors.response.use(
   }
 )
 
+// Request interceptor - Debug logging
+api.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', config.method?.toUpperCase(), config.url)
+    console.log('Request Data:', config.data)
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
 // Export the api instance as default
 export default api
 
@@ -201,6 +213,7 @@ export const reservationsApi = {
     pax: number
     notes?: string
   }) => {
+    console.log('Sending reservation data:', data)
     const response = await api.post<ApiResponse<Reservation>>('/reservations', data)
     return response.data
   },

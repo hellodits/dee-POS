@@ -5,6 +5,8 @@ import {
   getReservation,
   approveReservation,
   rejectReservation,
+  cancelReservation,
+  deleteReservation,
   getTodayReservations,
   checkReservationByPhone
 } from '../controllers/reservationController'
@@ -22,5 +24,7 @@ router.get('/today', protect, getTodayReservations)
 router.get('/:id', protect, getReservation)
 router.patch('/:id/approve', protect, authorize('admin', 'manager'), approveReservation)
 router.patch('/:id/reject', protect, authorize('admin', 'manager'), rejectReservation)
+router.patch('/:id/cancel', protect, authorize('admin', 'manager'), cancelReservation)
+router.delete('/:id', protect, authorize('admin', 'manager'), deleteReservation)
 
 export default router

@@ -4,3 +4,4 @@ export { POSPage } from './POSPage';
 export { OrderCard } from './OrderCard';
 export { PaymentModal } from './PaymentModal';
 export { PinPadModal } from './PinPadModal';
+export { DailySummary } from './DailySummary';

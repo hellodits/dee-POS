@@ -1,104 +1,179 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User, CurrentUser, ProfileFormData, NewUserFormData, ProfileView } from '../types';
-import { mockUsers, defaultPermissions } from '../data/profileData';
-import { auth } from '@/lib/api';
+import { defaultPermissions } from '../data/profileData';
+import { auth, usersApi } from '@/lib/api';
 
 export function useProfile() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [currentUserData, setCurrentUserData] = useState<CurrentUser | null>(null);
   const [activeView, setActiveView] = useState<ProfileView>('profile');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load current user from localStorage on mount
+  // Map API user to local User type
+  const mapApiUserToLocal = (apiUser: any): User => ({
+    id: apiUser._id || apiUser.id,
+    firstName: apiUser.firstName || apiUser.username?.split('_')[0] || 'User',
+    lastName: apiUser.lastName || '',
+    email: apiUser.email,
+    role: apiUser.role,
+    avatar: apiUser.avatar,
+    permissions: {
+      dashboard: true,
+      reports: apiUser.permissions?.can_see_report ?? false,
+      inventory: apiUser.permissions?.can_manage_inventory ?? false,
+      orders: true,
+      customers: true,
+      settings: apiUser.role === 'admin',
+    },
+    createdAt: apiUser.createdAt,
+    lastLogin: apiUser.lastLogin,
+  });
+
+  // Fetch all users from API
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await usersApi.getAll();
+      if (response.data?.success && response.data?.data) {
+        const mappedUsers = (response.data.data as any[]).map(mapApiUserToLocal);
+        setUsers(mappedUsers);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  }, []);
+
+  // Load current user and users list on mount
   useEffect(() => {
-    const loadUser = () => {
-      const storedUser = auth.getUser();
-      
-      if (storedUser) {
-        // Map API user to CurrentUser format
-        const nameParts = storedUser.username.split('_');
-        const firstName = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : 'User';
-        const lastName = nameParts.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') || '';
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch current user
+        const userData = await auth.getMe();
         
-        setCurrentUserData({
-          id: storedUser.id,
-          firstName,
-          lastName,
-          email: storedUser.email,
-          role: storedUser.role,
-          avatar: undefined,
-          address: '',
-          permissions: {
-            dashboard: true,
-            reports: storedUser.permissions?.can_see_report ?? false,
-            inventory: storedUser.permissions?.can_manage_inventory ?? false,
-            orders: true,
-            customers: true,
-            settings: storedUser.role === 'admin',
-          },
-          createdAt: new Date().toISOString(),
-          lastLogin: storedUser.lastLogin || new Date().toISOString(),
-        });
+        if (userData) {
+          setCurrentUserData({
+            id: userData.id,
+            firstName: userData.firstName || userData.username?.split('_')[0] || 'User',
+            lastName: userData.lastName || '',
+            email: userData.email,
+            role: userData.role,
+            avatar: userData.avatar,
+            address: userData.address || '',
+            permissions: {
+              dashboard: true,
+              reports: userData.permissions?.can_see_report ?? false,
+              inventory: userData.permissions?.can_manage_inventory ?? false,
+              orders: true,
+              customers: true,
+              settings: userData.role === 'admin',
+            },
+            createdAt: userData.createdAt || new Date().toISOString(),
+            lastLogin: userData.lastLogin || new Date().toISOString(),
+          });
+        }
+
+        // Fetch users list (only for admin/manager)
+        await fetchUsers();
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        // Fallback to localStorage for current user
+        const storedUser = auth.getUser();
+        if (storedUser) {
+          setCurrentUserData({
+            id: storedUser.id,
+            firstName: storedUser.firstName || storedUser.username?.split('_')[0] || 'User',
+            lastName: storedUser.lastName || '',
+            email: storedUser.email,
+            role: storedUser.role,
+            avatar: storedUser.avatar,
+            address: storedUser.address || '',
+            permissions: {
+              dashboard: true,
+              reports: storedUser.permissions?.can_see_report ?? false,
+              inventory: storedUser.permissions?.can_manage_inventory ?? false,
+              orders: true,
+              customers: true,
+              settings: storedUser.role === 'admin',
+            },
+            createdAt: new Date().toISOString(),
+            lastLogin: storedUser.lastLogin || new Date().toISOString(),
+          });
+        }
       }
       setIsLoading(false);
     };
 
-    loadUser();
-  }, []);
+    loadData();
+  }, [fetchUsers]);
 
-  // Profile management
-  const updateProfile = async (data: ProfileFormData) => {
+  // Profile management - uses real API
+  const updateProfile = async (data: ProfileFormData, avatarFile?: File) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const formData = new FormData();
+      formData.append('firstName', data.firstName);
+      formData.append('lastName', data.lastName);
+      formData.append('email', data.email);
+      formData.append('address', data.address || '');
       
-      setCurrentUserData(prev => prev ? {
-        ...prev,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        address: data.address,
-      } : null);
-      
-      // Update in users list if exists
-      if (currentUserData) {
-        setUsers(prev => prev.map(user => 
-          user.id === currentUserData.id 
-            ? { ...user, ...data }
-            : user
-        ));
+      if (data.newPassword) {
+        formData.append('newPassword', data.newPassword);
       }
       
-      return { success: true, message: 'Profile updated successfully' };
-    } catch (error) {
-      return { success: false, message: 'Failed to update profile' };
+      if (avatarFile) {
+        formData.append('avatar', avatarFile);
+      }
+
+      const result = await auth.updateProfile(formData);
+      
+      if (result.success && result.data) {
+        setCurrentUserData(prev => prev ? {
+          ...prev,
+          firstName: result.data.firstName || prev.firstName,
+          lastName: result.data.lastName || prev.lastName,
+          email: result.data.email,
+          address: result.data.address || '',
+          avatar: result.data.avatar,
+        } : null);
+        
+        return { success: true, message: 'Profile berhasil diperbarui' };
+      }
+      
+      return { success: false, message: result.error || 'Gagal memperbarui profile' };
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      return { success: false, message: error.response?.data?.error || 'Gagal memperbarui profile' };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // User management
+  // User management - uses real API
   const addUser = async (data: NewUserFormData) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Generate username from email
+      const username = data.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_');
       
-      const newUser: User = {
-        id: `user-${Date.now()}`,
+      const response = await usersApi.create({
+        username,
+        email: data.email,
+        password: data.password,
+        role: data.role,
         firstName: data.firstName,
         lastName: data.lastName,
-        email: data.email,
-        role: data.role,
-        permissions: defaultPermissions[data.role],
-        createdAt: new Date().toISOString(),
-      };
+      });
+
+      if (response.data?.success) {
+        // Refresh users list
+        await fetchUsers();
+        return { success: true, message: 'User berhasil ditambahkan' };
+      }
       
-      setUsers(prev => [...prev, newUser]);
-      return { success: true, message: 'User added successfully' };
-    } catch (error) {
-      return { success: false, message: 'Failed to add user' };
+      return { success: false, message: response.data?.error || 'Gagal menambahkan user' };
+    } catch (error: any) {
+      console.error('Add user error:', error);
+      return { success: false, message: error.response?.data?.error || 'Gagal menambahkan user' };
     } finally {
       setIsLoading(false);
     }
@@ -107,18 +182,23 @@ export function useProfile() {
   const updateUser = async (userId: string, updates: Partial<User>) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await usersApi.update(userId, {
+        firstName: updates.firstName,
+        lastName: updates.lastName,
+        email: updates.email,
+        role: updates.role,
+      });
+
+      if (response.data?.success) {
+        // Refresh users list
+        await fetchUsers();
+        return { success: true, message: 'User berhasil diperbarui' };
+      }
       
-      setUsers(prev => prev.map(user => 
-        user.id === userId 
-          ? { ...user, ...updates }
-          : user
-      ));
-      
-      return { success: true, message: 'User updated successfully' };
-    } catch (error) {
-      return { success: false, message: 'Failed to update user' };
+      return { success: false, message: response.data?.error || 'Gagal memperbarui user' };
+    } catch (error: any) {
+      console.error('Update user error:', error);
+      return { success: false, message: error.response?.data?.error || 'Gagal memperbarui user' };
     } finally {
       setIsLoading(false);
     }
@@ -127,29 +207,51 @@ export function useProfile() {
   const deleteUser = async (userId: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await usersApi.delete(userId);
+
+      if (response.data?.success) {
+        // Remove from local state
+        setUsers(prev => prev.filter(user => user.id !== userId));
+        return { success: true, message: 'User berhasil dihapus' };
+      }
       
-      setUsers(prev => prev.filter(user => user.id !== userId));
-      return { success: true, message: 'User deleted successfully' };
-    } catch (error) {
-      return { success: false, message: 'Failed to delete user' };
+      return { success: false, message: response.data?.error || 'Gagal menghapus user' };
+    } catch (error: any) {
+      console.error('Delete user error:', error);
+      return { success: false, message: error.response?.data?.error || 'Gagal menghapus user' };
     } finally {
       setIsLoading(false);
     }
   };
 
   const updateUserPermissions = async (userId: string, permissions: Partial<User['permissions']>) => {
-    const existingUser = users.find(u => u.id === userId);
-    const mergedPermissions = {
-      dashboard: permissions.dashboard ?? existingUser?.permissions?.dashboard ?? false,
-      reports: permissions.reports ?? existingUser?.permissions?.reports ?? false,
-      inventory: permissions.inventory ?? existingUser?.permissions?.inventory ?? false,
-      orders: permissions.orders ?? existingUser?.permissions?.orders ?? false,
-      customers: permissions.customers ?? existingUser?.permissions?.customers ?? false,
-      settings: permissions.settings ?? existingUser?.permissions?.settings ?? false,
-    };
-    return updateUser(userId, { permissions: mergedPermissions });
+    setIsLoading(true);
+    try {
+      // Map frontend permissions to backend format
+      const backendPermissions: Record<string, boolean> = {};
+      if (permissions.reports !== undefined) backendPermissions.can_see_report = permissions.reports;
+      if (permissions.inventory !== undefined) backendPermissions.can_manage_inventory = permissions.inventory;
+      if (permissions.settings !== undefined) backendPermissions.can_manage_users = permissions.settings;
+      
+      const response = await usersApi.updatePermissions(userId, backendPermissions);
+
+      if (response.data?.success) {
+        // Update local state
+        setUsers(prev => prev.map(user => 
+          user.id === userId 
+            ? { ...user, permissions: { ...user.permissions, ...permissions } }
+            : user
+        ));
+        return { success: true, message: 'Permissions berhasil diperbarui' };
+      }
+      
+      return { success: false, message: response.data?.error || 'Gagal memperbarui permissions' };
+    } catch (error: any) {
+      console.error('Update permissions error:', error);
+      return { success: false, message: error.response?.data?.error || 'Gagal memperbarui permissions' };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Default user if not loaded yet
@@ -178,5 +280,6 @@ export function useProfile() {
     updateUser,
     deleteUser,
     updateUserPermissions,
+    fetchUsers,
   };
 }

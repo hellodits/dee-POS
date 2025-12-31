@@ -14,6 +14,7 @@ export const createReservation = async (
   next: NextFunction
 ) => {
   try {
+    console.log('Received reservation request body:', req.body)
     const { guest_name, whatsapp, email, date, time, pax, notes } = req.body
 
     // Validate required fields
@@ -380,6 +381,101 @@ export const checkReservationByPhone = async (
     res.json({
       success: true,
       data: reservations
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * @desc    Cancel reservation (can cancel PENDING or APPROVED)
+ * @route   PATCH /api/reservations/:id/cancel
+ * @access  Private (Admin)
+ */
+export const cancelReservation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { admin_notes } = req.body
+    const user = (req as any).user
+
+    const reservation = await Reservation.findById(req.params.id)
+
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        error: 'Reservation not found'
+      })
+    }
+
+    if (reservation.status === 'COMPLETED') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot cancel a completed reservation'
+      })
+    }
+
+    if (reservation.status === 'CANCELLED' || reservation.status === 'REJECTED') {
+      return res.status(400).json({
+        success: false,
+        error: 'Reservation is already cancelled/rejected'
+      })
+    }
+
+    const updatedReservation = await Reservation.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          status: 'CANCELLED',
+          admin_notes: admin_notes || 'Dibatalkan oleh admin',
+          approved_by: user?.id ? new Types.ObjectId(user.id) : undefined,
+          approved_at: new Date()
+        }
+      },
+      { new: true }
+    )
+
+    console.log(`📱 Notify ${reservation.whatsapp}: Reservation CANCELLED`)
+
+    res.json({
+      success: true,
+      data: updatedReservation,
+      message: 'Reservation cancelled successfully'
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * @desc    Delete reservation permanently
+ * @route   DELETE /api/reservations/:id
+ * @access  Private (Admin)
+ */
+export const deleteReservation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const reservation = await Reservation.findById(req.params.id)
+
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        error: 'Reservation not found'
+      })
+    }
+
+    await Reservation.findByIdAndDelete(req.params.id)
+
+    res.json({
+      success: true,
+      message: 'Reservation deleted successfully'
     })
 
   } catch (error) {

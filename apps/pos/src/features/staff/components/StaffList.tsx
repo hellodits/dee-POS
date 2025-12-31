@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Staff, StaffFilters, SortOption, StaffRole } from '../types'
+import { Download } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 interface StaffListProps {
   staff: Staff[]
@@ -38,9 +40,11 @@ export function StaffList({
   const roleOptions: StaffRole[] = ['Manager', 'Cashier', 'Chef', 'Waiter', 'Cleaner', 'Security']
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('id-ID', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount)
   }
 
@@ -54,6 +58,36 @@ export function StaffList({
       Security: 'bg-red-100 text-red-800'
     }
     return colors[role] || 'bg-gray-100 text-gray-800'
+  }
+
+  const exportStaffToExcel = () => {
+    const data = staff.map(member => ({
+      'Nama': member.fullName,
+      'Email': member.email,
+      'Telepon': member.phone,
+      'Jabatan': member.role,
+      'Gaji': member.salary,
+      'Umur': member.age,
+      'Tanggal Lahir': member.dateOfBirth,
+      'Shift Masuk': member.shiftStart,
+      'Shift Keluar': member.shiftEnd,
+      'Alamat': member.address
+    }))
+    
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Data Staff')
+    
+    // Auto-size columns
+    const colWidths = [
+      { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 12 }, 
+      { wch: 15 }, { wch: 8 }, { wch: 12 }, { wch: 10 }, 
+      { wch: 10 }, { wch: 30 }
+    ]
+    ws['!cols'] = colWidths
+    
+    const today = new Date().toISOString().split('T')[0]
+    XLSX.writeFile(wb, `Data_Staff_${today}.xlsx`)
   }
 
   if (isMobile) {
@@ -214,73 +248,79 @@ export function StaffList({
   return (
     <div className="space-y-4">
       {/* Desktop Filters */}
-      <div className="flex items-center space-x-4">
-        <div className="relative">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowSortMenu(!showSortMenu)}
-          >
-            {t('staff.sortBy')}: {sortOptions.find(opt => opt.value === filters.sortBy)?.label}
-          </Button>
-          {showSortMenu && (
-            <div className="absolute top-full left-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10 min-w-[180px]">
-              {sortOptions.map(option => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    onSortChange(option.value)
-                    setShowSortMenu(false)
-                  }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-accent ${
-                    filters.sortBy === option.value ? 'bg-accent' : ''
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSortMenu(!showSortMenu)}
+            >
+              {t('staff.sortBy')}: {sortOptions.find(opt => opt.value === filters.sortBy)?.label}
+            </Button>
+            {showSortMenu && (
+              <div className="absolute top-full left-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10 min-w-[180px]">
+                {sortOptions.map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      onSortChange(option.value)
+                      setShowSortMenu(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-accent ${
+                      filters.sortBy === option.value ? 'bg-accent' : ''
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-        <div className="relative">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowRoleFilter(!showRoleFilter)}
-          >
-            {filters.role ? filters.role : t('staff.allRoles')}
-          </Button>
-          {showRoleFilter && (
-            <div className="absolute top-full left-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10 min-w-[140px]">
-              <button
-                onClick={() => {
-                  onRoleFilter(undefined)
-                  setShowRoleFilter(false)
-                }}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-accent ${
-                  !filters.role ? 'bg-accent' : ''
-                }`}
-              >
-                {t('staff.allRoles')}
-              </button>
-              {roleOptions.map(role => (
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRoleFilter(!showRoleFilter)}
+            >
+              {filters.role ? filters.role : t('staff.allRoles')}
+            </Button>
+            {showRoleFilter && (
+              <div className="absolute top-full left-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10 min-w-[140px]">
                 <button
-                  key={role}
                   onClick={() => {
-                    onRoleFilter(role)
+                    onRoleFilter(undefined)
                     setShowRoleFilter(false)
                   }}
                   className={`w-full text-left px-3 py-2 text-sm hover:bg-accent ${
-                    filters.role === role ? 'bg-accent' : ''
+                    !filters.role ? 'bg-accent' : ''
                   }`}
                 >
-                  {role}
+                  {t('staff.allRoles')}
                 </button>
-              ))}
-            </div>
-          )}
+                {roleOptions.map(role => (
+                  <button
+                    key={role}
+                    onClick={() => {
+                      onRoleFilter(role)
+                      setShowRoleFilter(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-accent ${
+                      filters.role === role ? 'bg-accent' : ''
+                    }`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
+        <Button variant="outline" size="sm" onClick={exportStaffToExcel} disabled={staff.length === 0}>
+          <Download className="w-4 h-4 mr-2" />Export XLS
+        </Button>
       </div>
 
       {/* Desktop Table */}

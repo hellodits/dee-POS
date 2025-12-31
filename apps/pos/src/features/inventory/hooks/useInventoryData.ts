@@ -165,8 +165,33 @@ export const useInventoryData = () => {
   }, [items, filters]);
 
   // Add new inventory item - connected to API
-  const addItem = useCallback(async (formData: any) => {
+  const addItem = useCallback(async (data: any) => {
     try {
+      // Create FormData for file upload support
+      const formData = new FormData();
+      
+      // Add all fields to FormData
+      formData.append('name', data.name);
+      if (data.description) formData.append('description', data.description);
+      formData.append('category', data.category);
+      formData.append('unit', data.unit);
+      formData.append('current_stock', String(data.current_stock || 0));
+      formData.append('min_stock', String(data.min_stock || 0));
+      if (data.max_stock) formData.append('max_stock', String(data.max_stock));
+      formData.append('cost_per_unit', String(data.cost_per_unit || 0));
+      if (data.supplier) formData.append('supplier', data.supplier);
+      if (data.supplier_contact) formData.append('supplier_contact', data.supplier_contact);
+      if (data.expiry_date) formData.append('expiry_date', data.expiry_date);
+      formData.append('is_perishable', String(data.is_perishable || false));
+      if (data.storage_location) formData.append('storage_location', data.storage_location);
+      
+      // Add image file if provided
+      if (data.imageFile) {
+        formData.append('image', data.imageFile);
+      } else if (data.image_url) {
+        formData.append('image_url', data.image_url);
+      }
+      
       const response = await inventoryApi.create(formData);
       
       if (response.data?.success) {
@@ -182,8 +207,33 @@ export const useInventoryData = () => {
   }, [fetchInventory]);
 
   // Update inventory item - connected to API
-  const updateItem = useCallback(async (itemId: string, formData: any) => {
+  const updateItem = useCallback(async (itemId: string, data: any) => {
     try {
+      // Create FormData for file upload support
+      const formData = new FormData();
+      
+      // Add all fields to FormData
+      if (data.name) formData.append('name', data.name);
+      if (data.description !== undefined) formData.append('description', data.description || '');
+      if (data.category) formData.append('category', data.category);
+      if (data.unit) formData.append('unit', data.unit);
+      if (data.current_stock !== undefined) formData.append('current_stock', String(data.current_stock));
+      if (data.min_stock !== undefined) formData.append('min_stock', String(data.min_stock));
+      if (data.max_stock !== undefined) formData.append('max_stock', String(data.max_stock));
+      if (data.cost_per_unit !== undefined) formData.append('cost_per_unit', String(data.cost_per_unit));
+      if (data.supplier !== undefined) formData.append('supplier', data.supplier || '');
+      if (data.supplier_contact !== undefined) formData.append('supplier_contact', data.supplier_contact || '');
+      if (data.expiry_date !== undefined) formData.append('expiry_date', data.expiry_date || '');
+      if (data.is_perishable !== undefined) formData.append('is_perishable', String(data.is_perishable));
+      if (data.storage_location !== undefined) formData.append('storage_location', data.storage_location || '');
+      
+      // Add image file if provided
+      if (data.imageFile) {
+        formData.append('image', data.imageFile);
+      } else if (data.image_url) {
+        formData.append('image_url', data.image_url);
+      }
+      
       const response = await inventoryApi.update(itemId, formData);
       
       if (response.data?.success) {

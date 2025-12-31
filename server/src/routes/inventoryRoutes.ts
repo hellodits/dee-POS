@@ -11,6 +11,7 @@ import {
   getExpiringItems
 } from '../controllers/inventoryController';
 import { protect as authenticateToken } from '../middleware/auth';
+import { upload } from '../middleware/upload';
 
 const router = express.Router();
 
@@ -32,11 +33,11 @@ router.get('/expiring', getExpiringItems);
 // Get inventory by ID
 router.get('/:id', getInventoryById);
 
-// Create new inventory item
-router.post('/', createInventory);
+// Create new inventory item (with image upload)
+router.post('/', upload.single('image'), createInventory);
 
-// Update inventory item
-router.put('/:id', updateInventory);
+// Update inventory item (with image upload)
+router.put('/:id', upload.single('image'), updateInventory);
 
 // Delete inventory item
 router.delete('/:id', deleteInventory);

@@ -34,7 +34,7 @@ export default function Checkout() {
     fetchTables();
   }, []);
 
-  const handleBack = () => navigate("/");
+  const handleBack = () => navigate("/menu");
   const handleGuestDecrement = () => { if (guestCount > 1) setGuestCount(guestCount - 1); };
   const handleGuestIncrement = () => { if (guestCount < 20) setGuestCount(guestCount + 1); };
   
@@ -116,10 +116,10 @@ export default function Checkout() {
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
         <div className="flex items-center px-4 py-4">
-          <button onClick={handleBack} className="w-10 h-10 flex items-center justify-center -ml-2">
-            <ArrowLeft className="w-6 h-6 text-gray-800" />
+          <button onClick={handleBack} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors z-10">
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <h1 className="flex-1 text-center text-lg font-bold text-gray-900 -ml-10">Checkout</h1>
+          <h1 className="flex-1 text-center text-lg font-bold text-gray-900 -ml-10 pointer-events-none">Checkout</h1>
         </div>
       </div>
 

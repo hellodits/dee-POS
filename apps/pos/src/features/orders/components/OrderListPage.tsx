@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Search, RefreshCw, X, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Search, RefreshCw, X, AlertTriangle, Calendar, BarChart3 } from 'lucide-react';
 import { useOrderStore } from '../hooks/useOrderStore';
 import { OrderCard } from './OrderCard';
 import { PaymentModal } from './PaymentModal';
+import { DailySummary } from './DailySummary';
 import { Order, OrderStatus, PaymentData } from '../types';
 import { useSocket } from '@/hooks/useSocket';
 import { ordersApi } from '@/lib/api';
@@ -189,6 +190,8 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   // Socket connection for real-time updates
   const { isConnected } = useSocket({
@@ -224,10 +227,32 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
     setIsPaymentModalOpen(true);
   };
 
-  const handlePaymentComplete = (_paymentData: PaymentData) => {
+  const handlePaymentComplete = async (paymentData: PaymentData) => {
     if (selectedOrder) {
-      updateOrderStatus(selectedOrder.id, 'completed');
-      setSelectedOrder(null);
+      try {
+        // Map payment method to API format
+        const paymentMethodMap: Record<string, 'CASH' | 'CARD' | 'QRIS' | 'TRANSFER'> = {
+          'cash': 'CASH',
+          'card': 'CARD',
+          'qris': 'QRIS',
+          'e-wallet': 'TRANSFER'
+        };
+        
+        const apiPaymentMethod = paymentMethodMap[paymentData.paymentMethod] || 'CASH';
+        
+        // Call API to pay the order with amount (use received or total)
+        await ordersApi.pay(selectedOrder.id, apiPaymentMethod, paymentData.received || paymentData.total);
+        
+        // Refresh orders to get updated data
+        await fetchOrders();
+        
+        setSelectedOrder(null);
+      } catch (err) {
+        console.error('Failed to process payment:', err);
+        // Still update local state as fallback
+        updateOrderStatus(selectedOrder.id, 'completed');
+        setSelectedOrder(null);
+      }
     }
     setIsPaymentModalOpen(false);
   };
@@ -340,27 +365,54 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
             ))}
           </div>
 
-          {/* Right Side - Search & Add Button */}
-          <div className="flex items-center gap-3">
+          {/* Right Side - Search, Summary Toggle & Add Button */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Date Picker */}
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4 text-gray-400 hidden sm:block" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm w-[120px] sm:w-auto"
+              />
+            </div>
+
+            {/* Summary Toggle */}
+            <button
+              onClick={() => setShowSummary(!showSummary)}
+              className={`
+                flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                ${showSummary 
+                  ? 'bg-red-100 text-red-700 border border-red-200' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }
+              `}
+              title="Tampilkan Rekap"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Rekap</span>
+            </button>
+
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search orders..."
+                placeholder="Cari order..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm w-64"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm w-40 sm:w-56"
               />
             </div>
 
             {/* Add New Order Button */}
             <button
               onClick={onAddNewOrder}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
-              Add New Order
+              <span className="hidden sm:inline">New Order</span>
             </button>
           </div>
         </div>
@@ -368,41 +420,53 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
 
       {/* Orders Grid */}
       <main className="flex-1 bg-gray-50 p-4 sm:p-6">
-        {orders.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
-              <Plus className="w-16 h-16 mx-auto" />
+        <div className={`${showSummary ? 'flex flex-col lg:flex-row gap-6' : ''}`}>
+          {/* Orders List */}
+          <div className={`${showSummary ? 'flex-1' : 'w-full'}`}>
+            {orders.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                <div className="text-gray-400 mb-4">
+                  <Plus className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Order</h3>
+                <p className="text-gray-500 mb-6">
+                  {searchQuery 
+                    ? `Tidak ada order yang cocok dengan "${searchQuery}"`
+                    : orderStatus === 'all' 
+                      ? 'Belum ada order yang dibuat'
+                      : `Tidak ada order dengan status ${orderStatus}`
+                  }
+                </p>
+                <button
+                  onClick={onAddNewOrder}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  <Plus className="w-5 h-5" />
+                  Buat Order Pertama
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                {orders.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onPayBill={handlePayBill}
+                    onEdit={handleEditOrder}
+                    onDelete={handleDeleteOrder}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Daily Summary Sidebar */}
+          {showSummary && (
+            <div className="w-full lg:w-80 xl:w-96 flex-shrink-0">
+              <DailySummary orders={orders} selectedDate={selectedDate} />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders Found</h3>
-            <p className="text-gray-500 mb-6">
-              {searchQuery 
-                ? `No orders match "${searchQuery}"`
-                : orderStatus === 'all' 
-                  ? 'No orders have been created yet'
-                  : `No ${orderStatus} orders found`
-              }
-            </p>
-            <button
-              onClick={onAddNewOrder}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-            >
-              <Plus className="w-5 h-5" />
-              Create First Order
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {orders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onPayBill={handlePayBill}
-                onEdit={handleEditOrder}
-                onDelete={handleDeleteOrder}
-              />
-            ))}
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       {/* Payment Modal */}

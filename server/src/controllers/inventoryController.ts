@@ -3,6 +3,7 @@ import { Inventory } from '../models/Inventory';
 import { InventoryLog } from '../models/InventoryLog';
 import { AuthRequest } from '../middleware/auth';
 import mongoose from 'mongoose';
+import { uploadToCloudinary } from '../config/cloudinary';
 
 // Get all inventory items
 export const getAllInventory = async (req: Request, res: Response) => {
@@ -101,6 +102,23 @@ export const createInventory = async (req: AuthRequest, res: Response) => {
   try {
     const inventoryData = req.body;
     
+    // Parse numeric fields from FormData (they come as strings)
+    if (inventoryData.current_stock) {
+      inventoryData.current_stock = parseFloat(inventoryData.current_stock);
+    }
+    if (inventoryData.min_stock) {
+      inventoryData.min_stock = parseFloat(inventoryData.min_stock);
+    }
+    if (inventoryData.max_stock) {
+      inventoryData.max_stock = parseFloat(inventoryData.max_stock);
+    }
+    if (inventoryData.cost_per_unit) {
+      inventoryData.cost_per_unit = parseFloat(inventoryData.cost_per_unit);
+    }
+    if (inventoryData.is_perishable) {
+      inventoryData.is_perishable = inventoryData.is_perishable === 'true';
+    }
+    
     // Check if inventory with same name exists
     const existingInventory = await Inventory.findOne({ 
       name: inventoryData.name,
@@ -114,23 +132,43 @@ export const createInventory = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Handle image upload if provided
+    if (req.file && req.file.buffer && req.file.buffer.length > 0) {
+      console.log('📸 Uploading inventory image to Cloudinary...');
+      console.log('File info:', { 
+        originalname: req.file.originalname, 
+        mimetype: req.file.mimetype, 
+        size: req.file.size 
+      });
+      
+      try {
+        const result = await uploadToCloudinary(req.file, {
+          folder: 'deepos/inventory'
+        });
+        inventoryData.image_url = result.secure_url;
+        console.log('✅ Image uploaded:', inventoryData.image_url);
+      } catch (uploadError) {
+        console.error('❌ Cloudinary upload error:', uploadError);
+        // Continue without image if upload fails
+      }
+    } else {
+      console.log('📷 No image file provided for inventory');
+    }
+
     const inventory = new Inventory(inventoryData);
     await inventory.save();
 
     // Log initial stock if > 0
     if (inventory.current_stock > 0) {
       const log = new InventoryLog({
-        inventory_id: inventory._id,
-        inventory_name: inventory.name,
-        type: 'IN',
-        quantity: inventory.current_stock,
-        reason: 'INITIAL_STOCK',
+        product_id: inventory._id,
+        product_name: inventory.name,
+        qty_change: inventory.current_stock,
+        qty_before: 0,
+        qty_after: inventory.current_stock,
+        reason: 'RESTOCK',
         notes: 'Stok awal saat membuat inventory',
-        stock_before: 0,
-        stock_after: inventory.current_stock,
-        cost_per_unit: inventory.cost_per_unit,
-        total_cost: inventory.current_stock * inventory.cost_per_unit,
-        created_by: req.user?.id || 'system'
+        user_id: req.user?.id
       });
       await log.save();
     }
@@ -150,7 +188,7 @@ export const createInventory = async (req: AuthRequest, res: Response) => {
 };
 
 // Update inventory item
-export const updateInventory = async (req: Request, res: Response) => {
+export const updateInventory = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
@@ -162,8 +200,60 @@ export const updateInventory = async (req: Request, res: Response) => {
       });
     }
 
-    // Don't allow direct stock updates through this endpoint
-    delete updateData.current_stock;
+    // Get current inventory to check stock change
+    const currentInventory = await Inventory.findById(id);
+    if (!currentInventory) {
+      return res.status(404).json({
+        success: false,
+        error: 'Inventory tidak ditemukan'
+      });
+    }
+    
+    // Parse numeric fields from FormData (they come as strings)
+    if (updateData.current_stock !== undefined) {
+      updateData.current_stock = parseFloat(updateData.current_stock);
+    }
+    if (updateData.min_stock) {
+      updateData.min_stock = parseFloat(updateData.min_stock);
+    }
+    if (updateData.max_stock) {
+      updateData.max_stock = parseFloat(updateData.max_stock);
+    }
+    if (updateData.cost_per_unit) {
+      updateData.cost_per_unit = parseFloat(updateData.cost_per_unit);
+    }
+    if (updateData.is_perishable) {
+      updateData.is_perishable = updateData.is_perishable === 'true';
+    }
+
+    // Handle stock change - create log if stock is being updated
+    const stockBefore = currentInventory.current_stock;
+    const stockAfter = updateData.current_stock !== undefined ? updateData.current_stock : stockBefore;
+    const stockChanged = stockAfter !== stockBefore;
+
+    // Handle image upload if provided
+    if (req.file && req.file.buffer && req.file.buffer.length > 0) {
+      console.log('📸 Uploading inventory image to Cloudinary...');
+      console.log('File info:', { 
+        originalname: req.file.originalname, 
+        mimetype: req.file.mimetype, 
+        size: req.file.size 
+      });
+      
+      try {
+        const result = await uploadToCloudinary(req.file, {
+          folder: 'deepos/inventory'
+        });
+        updateData.image_url = result.secure_url;
+        console.log('✅ Image uploaded:', updateData.image_url);
+      } catch (uploadError) {
+        console.error('❌ Cloudinary upload error:', uploadError);
+        return res.status(500).json({
+          success: false,
+          error: 'Gagal mengupload gambar'
+        });
+      }
+    }
     
     const inventory = await Inventory.findByIdAndUpdate(
       id,
@@ -176,6 +266,23 @@ export const updateInventory = async (req: Request, res: Response) => {
         success: false,
         error: 'Inventory tidak ditemukan'
       });
+    }
+
+    // Create inventory log if stock changed
+    if (stockChanged) {
+      const qtyChange = stockAfter - stockBefore;
+      const log = new InventoryLog({
+        product_id: inventory._id,
+        product_name: inventory.name,
+        qty_change: qtyChange,
+        qty_before: stockBefore,
+        qty_after: stockAfter,
+        reason: qtyChange > 0 ? 'RESTOCK' : 'ADJUSTMENT',
+        notes: 'Perubahan stok melalui edit inventory',
+        user_id: req.user?.id
+      });
+      await log.save();
+      console.log('📝 Stock change logged:', { stockBefore, stockAfter, qtyChange });
     }
 
     res.json({
@@ -286,17 +393,14 @@ export const adjustInventoryStock = async (req: AuthRequest, res: Response) => {
 
     // Create inventory log
     const log = new InventoryLog({
-      inventory_id: inventory._id,
-      inventory_name: inventory.name,
-      type: qty_change > 0 ? 'IN' : 'OUT',
-      quantity: Math.abs(qty_change),
-      reason,
+      product_id: inventory._id,
+      product_name: inventory.name,
+      qty_change: qty_change,
+      qty_before: stockBefore,
+      qty_after: stockAfter,
+      reason: reason,
       notes,
-      stock_before: stockBefore,
-      stock_after: stockAfter,
-      cost_per_unit: cost_per_unit || inventory.cost_per_unit,
-      total_cost: Math.abs(qty_change) * (cost_per_unit || inventory.cost_per_unit),
-      created_by: req.user?.id || 'system'
+      user_id: req.user?.id
     });
     await log.save();
 

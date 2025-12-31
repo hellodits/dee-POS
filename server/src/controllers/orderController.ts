@@ -325,7 +325,7 @@ export const payOrder = async (
   next: NextFunction
 ) => {
   try {
-    const { payment_method } = req.body
+    const { payment_method, amount } = req.body
     const validMethods = ['CASH', 'CARD', 'QRIS', 'TRANSFER']
 
     if (!validMethods.includes(payment_method)) {
@@ -335,8 +335,16 @@ export const payOrder = async (
       })
     }
 
+    // Validate amount is provided
+    if (typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid payment amount is required'
+      })
+    }
+
     const user_id = (req as any).user?.id
-    const order = await processPayment(req.params.id, payment_method, user_id)
+    const { order, transaction } = await processPayment(req.params.id, payment_method, amount, user_id)
 
     if (!order) {
       return res.status(404).json({
@@ -347,10 +355,20 @@ export const payOrder = async (
 
     res.json({
       success: true,
-      data: order
+      data: {
+        order,
+        transaction,
+        change: amount - order.financials.total
+      }
     })
 
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes('Insufficient payment') || error.message?.includes('already paid')) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      })
+    }
     next(error)
   }
 }

@@ -1,49 +1,77 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, Upload } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Upload, X, Loader2, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { mockStaffData } from '../data/mockStaffData'
+import { staffApi } from '@/lib/api'
 import { Staff } from '../types'
 
 interface StaffDetailProps {
-  // Props kept for compatibility but not used
   isSidebarCollapsed: boolean
   isMobile: boolean
   onToggleSidebar: () => void
 }
 
-export function StaffDetail({ }: StaffDetailProps) {
+export function StaffDetail({ isSidebarCollapsed, isMobile, onToggleSidebar }: StaffDetailProps) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [staff, setStaff] = useState<Staff | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleBack = () => {
+    navigate('/staff')
+  }
 
   useEffect(() => {
-    // Simulate API call
     const fetchStaff = async () => {
+      if (!id) return
+      
       setLoading(true)
+      setError(null)
+      
       try {
-        const foundStaff = mockStaffData.find(s => s.id === id)
-        setStaff(foundStaff || null)
-      } catch (error) {
-        console.error('Error fetching staff:', error)
+        const response = await staffApi.getById(id)
+        
+        if (response.data.success && response.data.data) {
+          const s = response.data.data as any
+          setStaff({
+            id: s._id,
+            fullName: s.fullName,
+            email: s.email,
+            phone: s.phone,
+            role: s.role,
+            salary: s.salary,
+            dateOfBirth: s.dateOfBirth,
+            age: s.age,
+            shiftStart: s.shiftStart,
+            shiftEnd: s.shiftEnd,
+            address: s.address,
+            additionalDetails: s.additionalDetails || '',
+            profileImage: s.profileImage || '',
+            createdAt: s.createdAt,
+            updatedAt: s.updatedAt
+          })
+        }
+      } catch (err: any) {
+        console.error('Error fetching staff:', err)
+        setError(err.response?.data?.error || 'Gagal memuat data staff')
       } finally {
         setLoading(false)
       }
     }
 
-    if (id) {
-      fetchStaff()
-    }
+    fetchStaff()
   }, [id])
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('id-ID', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount)
   }
 
@@ -65,19 +93,19 @@ export function StaffDetail({ }: StaffDetailProps) {
     })
   }
 
-  const handleDeleteStaff = () => {
+  const handleDeleteStaff = async () => {
     if (staff && window.confirm(t('staff.confirmDeleteStaff'))) {
-      // In a real app, this would call an API to delete the staff
-      // For now, we'll simulate the deletion and navigate back
-      console.log('Deleting staff:', staff.id)
-      
-      // Show success message
-      alert(t('staff.staffDeletedSuccessfully'))
-      
-      // Navigate back to staff list
-      navigate('/staff')
+      try {
+        await staffApi.delete(staff.id)
+        alert(t('staff.staffDeletedSuccessfully'))
+        navigate('/staff')
+      } catch (err: any) {
+        alert(err.response?.data?.error || 'Gagal menghapus staff')
+      }
     }
   }
+
+  const [isUploading, setIsUploading] = useState(false)
 
   const handleChangePhoto = () => {
     // Create a file input element
@@ -86,9 +114,9 @@ export function StaffDetail({ }: StaffDetailProps) {
     fileInput.accept = 'image/*'
     fileInput.style.display = 'none'
     
-    fileInput.onchange = (event) => {
+    fileInput.onchange = async (event) => {
       const file = (event.target as HTMLInputElement).files?.[0]
-      if (file) {
+      if (file && staff) {
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
           alert(t('staff.photoTooLarge'))
@@ -101,18 +129,53 @@ export function StaffDetail({ }: StaffDetailProps) {
           return
         }
         
-        // In a real app, you would upload the file to a server
-        // For now, we'll create a local URL for preview
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string
-          console.log('New photo selected:', imageUrl)
-          alert(t('staff.photoUploadedSuccessfully'))
+        // Upload to server
+        setIsUploading(true)
+        try {
+          console.log('📸 Starting photo upload for staff:', staff.id)
           
-          // In a real app, you would update the staff data
-          // setStaff(prev => prev ? { ...prev, profileImage: imageUrl } : null)
+          const formData = new FormData()
+          // Only send the image file - the server will handle partial updates
+          formData.append('profileImage', file)
+          
+          console.log('📤 Uploading photo:', file.name, file.size, 'bytes')
+          
+          const response = await staffApi.update(staff.id, formData)
+          
+          if (response.data.success && response.data.data) {
+            const updatedData = response.data.data as any
+            console.log('✅ Photo uploaded successfully:', updatedData.profileImage)
+            console.log('📊 Updated staff data:', updatedData)
+            
+            // Update local state immediately with new image URL
+            setStaff(prev => prev ? {
+              ...prev,
+              profileImage: updatedData.profileImage || '',
+              updatedAt: updatedData.updatedAt || new Date().toISOString()
+            } : null)
+            
+            // Force image refresh by adding timestamp to avoid caching issues
+            if (updatedData.profileImage) {
+              const imageUrl = updatedData.profileImage
+              console.log('🖼️ New image URL set:', imageUrl)
+              // Preload the new image to ensure it's ready
+              const img = new Image()
+              img.onload = () => {
+                console.log('✅ New image preloaded successfully')
+              }
+              img.src = imageUrl
+            }
+            
+            // Show success message
+            alert(t('staff.photoUploadedSuccessfully'))
+          }
+        } catch (err: any) {
+          console.error('❌ Photo upload error:', err)
+          const errorMessage = err.response?.data?.error || err.message || 'Gagal mengupload foto'
+          alert(errorMessage)
+        } finally {
+          setIsUploading(false)
         }
-        reader.readAsDataURL(file)
       }
     }
     
@@ -126,23 +189,71 @@ export function StaffDetail({ }: StaffDetailProps) {
     return (
       <div className="flex-1 bg-background min-h-screen flex flex-col">
         <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={onToggleSidebar}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+                title={isSidebarCollapsed ? t('common.expand') : t('common.collapse')}
+              >
+                {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
+              </button>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
+                {t('staff.staffDetail')}
+              </h1>
+            </div>
             <button
-              onClick={() => navigate('/staff')}
+              onClick={handleBack}
               className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-              title={t('common.back')}
+              title={t('common.close')}
             >
-              <ChevronLeft className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
-              {t('staff.staffDetail')}
-            </h1>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
             <p className="text-muted-foreground">{t('common.loading')}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 bg-background min-h-screen flex flex-col">
+        <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={onToggleSidebar}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+                title={isSidebarCollapsed ? t('common.expand') : t('common.collapse')}
+              >
+                {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
+              </button>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
+                {t('staff.staffDetail')}
+              </h1>
+            </div>
+            <button
+              onClick={handleBack}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+              title={t('common.close')}
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <p className="text-destructive font-medium mb-4">{error}</p>
+            <Button onClick={handleBack} variant="outline">
+              {t('staff.backToStaffList')}
+            </Button>
           </div>
         </div>
       </div>
@@ -153,23 +264,32 @@ export function StaffDetail({ }: StaffDetailProps) {
     return (
       <div className="flex-1 bg-background min-h-screen flex flex-col">
         <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={onToggleSidebar}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+                title={isSidebarCollapsed ? t('common.expand') : t('common.collapse')}
+              >
+                {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
+              </button>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
+                {t('staff.staffDetail')}
+              </h1>
+            </div>
             <button
-              onClick={() => navigate('/staff')}
+              onClick={handleBack}
               className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-              title={t('common.back')}
+              title={t('common.close')}
             >
-              <ChevronLeft className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
-              {t('staff.staffDetail')}
-            </h1>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <p className="text-muted-foreground mb-4">{t('staff.staffNotFound')}</p>
-            <Button onClick={() => navigate('/staff')} variant="outline">
+            <Button onClick={handleBack} variant="outline">
               {t('staff.backToStaffList')}
             </Button>
           </div>
@@ -182,17 +302,26 @@ export function StaffDetail({ }: StaffDetailProps) {
     <div className="flex-1 bg-background min-h-screen flex flex-col">
       {/* Header */}
       <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+              title={isSidebarCollapsed ? t('common.expand') : t('common.collapse')}
+            >
+              {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
+            </button>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
+              {staff.fullName}
+            </h1>
+          </div>
           <button
-            onClick={() => navigate('/staff')}
+            onClick={handleBack}
             className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-            title={t('staff.backToStaffList')}
+            title={t('common.close')}
           >
-            <ChevronLeft className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
-          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
-            {staff.fullName}
-          </h1>
         </div>
       </div>
 
@@ -210,18 +339,33 @@ export function StaffDetail({ }: StaffDetailProps) {
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
                   <div className="w-48 h-64 mx-auto bg-muted rounded-lg flex items-center justify-center overflow-hidden relative group">
-                    {staff.profileImage ? (
+                    {isUploading ? (
+                      <div className="text-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Mengupload...</p>
+                      </div>
+                    ) : staff.profileImage ? (
                       <>
                         <img 
+                          key={staff.profileImage} // Force re-render when URL changes
                           src={staff.profileImage} 
                           alt={staff.fullName}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('❌ Image load error:', staff.profileImage)
+                            // Hide broken image and show placeholder
+                            e.currentTarget.style.display = 'none'
+                          }}
+                          onLoad={() => {
+                            console.log('✅ Image loaded successfully:', staff.profileImage)
+                          }}
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
                             onClick={handleChangePhoto}
                             className="p-2 bg-white rounded-full text-gray-800 hover:bg-gray-100 transition-colors"
                             title={t('staff.changePhoto')}
+                            disabled={isUploading}
                           >
                             <Upload className="w-5 h-5" />
                           </button>
@@ -238,6 +382,7 @@ export function StaffDetail({ }: StaffDetailProps) {
                         <button
                           onClick={handleChangePhoto}
                           className="inline-flex items-center space-x-2 text-sm text-primary hover:text-primary/80"
+                          disabled={isUploading}
                         >
                           <Upload className="w-4 h-4" />
                           <span>{t('staff.uploadPhoto')}</span>
@@ -251,6 +396,7 @@ export function StaffDetail({ }: StaffDetailProps) {
                       onClick={handleEditStaff}
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                       size="sm"
+                      disabled={isUploading}
                     >
                       {t('staff.editProfile')}
                     </Button>
@@ -259,6 +405,7 @@ export function StaffDetail({ }: StaffDetailProps) {
                       variant="outline" 
                       className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                       size="sm"
+                      disabled={isUploading}
                     >
                       {t('staff.deleteProfile')}
                     </Button>

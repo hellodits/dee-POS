@@ -45,6 +45,7 @@ export interface InventoryFormData {
   is_perishable: boolean;
   storage_location?: string;
   image_url?: string;
+  imageFile?: File | null; // For file upload
 }
 
 export type SortOption = 'name' | 'category' | 'quantity' | 'price' | 'status' | 'recent';

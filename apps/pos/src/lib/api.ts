@@ -23,6 +23,10 @@ export interface AuthResponse {
     id: string
     username: string
     email: string
+    firstName?: string
+    lastName?: string
+    address?: string
+    avatar?: string
     role: 'admin' | 'manager' | 'cashier'
     permissions: {
       can_void: boolean
@@ -54,6 +58,12 @@ api.interceptors.request.use(
     
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
+    }
+    
+    // If sending FormData, let axios set the Content-Type automatically
+    // This is important for multipart/form-data with proper boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
     }
     
     return config
@@ -149,6 +159,22 @@ export const auth = {
     if (!user) return false
     if (user.role === 'admin') return true
     return user.permissions?.[permission] ?? false
+  },
+
+  getMe: async () => {
+    const response = await api.get<ApiResponse>('/auth/me')
+    return response.data.data
+  },
+
+  updateProfile: async (data: FormData) => {
+    const response = await api.put<ApiResponse>('/auth/profile', data, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    // Update stored user data
+    if (response.data.data) {
+      localStorage.setItem(USER_KEY, JSON.stringify(response.data.data))
+    }
+    return response.data
   }
 }
 
@@ -205,8 +231,8 @@ export const ordersApi = {
   updateStatus: (id: string, status: string) => 
     api.patch<ApiResponse>(`/orders/${id}/status`, { status }),
   
-  pay: (id: string, payment_method: 'CASH' | 'CARD' | 'QRIS' | 'TRANSFER') => 
-    api.post<ApiResponse>(`/orders/${id}/pay`, { payment_method }),
+  pay: (id: string, payment_method: 'CASH' | 'CARD' | 'QRIS' | 'TRANSFER', amount: number) => 
+    api.post<ApiResponse>(`/orders/${id}/pay`, { payment_method, amount }),
   
   void: (id: string) => 
     api.post<ApiResponse>(`/orders/${id}/void`),
@@ -265,14 +291,36 @@ export const reportsApi = {
   getSales: (params?: { period?: string; date_from?: string; date_to?: string }) => 
     api.get<ApiResponse>('/reports/sales', { params }),
   
-  getTopProducts: (params?: { period?: string; limit?: number }) => 
+  getTopProducts: (params?: { period?: string; limit?: number; date_from?: string; date_to?: string }) => 
     api.get<ApiResponse>('/reports/top-products', { params }),
   
-  getDailyTrend: (params?: { period?: string }) => 
+  getDailyTrend: (params?: { period?: string; date_from?: string; date_to?: string }) => 
     api.get<ApiResponse>('/reports/daily-trend', { params }),
   
   getLowStock: (threshold?: number) => 
     api.get<ApiResponse>('/reports/low-stock', { params: { threshold } }),
+  
+  getTransactions: (params?: { period?: string; date_from?: string; date_to?: string }) => 
+    api.get<ApiResponse>('/reports/transactions', { params }),
+  
+  getCashiers: (params?: { period?: string; date_from?: string; date_to?: string }) => 
+    api.get<ApiResponse>('/reports/cashiers', { params }),
+  
+  getReservations: (params?: { period?: string; date_from?: string; date_to?: string }) => 
+    api.get<ApiResponse>('/reports/reservations', { params }),
+  
+  getStaff: (params?: { period?: string; date_from?: string; date_to?: string }) => 
+    api.get<ApiResponse>('/reports/staff', { params }),
+  
+  getRevenueChart: (params?: { period?: string; date_from?: string; date_to?: string }) => 
+    api.get<ApiResponse>('/reports/revenue-chart', { params }),
+  
+  getReservationChart: (params?: { period?: string; date_from?: string; date_to?: string }) => 
+    api.get<ApiResponse>('/reports/reservation-chart', { params }),
+  
+  // Export functions
+  exportOrders: (params?: { date_from?: string; date_to?: string; status?: string; payment_status?: string; order_source?: string }) => 
+    api.get<ApiResponse>('/reports/export-orders', { params }),
 }
 
 export const inventoryApi = {
@@ -291,38 +339,15 @@ export const inventoryApi = {
   getExpiring: (days?: number) => 
     api.get<ApiResponse>('/inventory/expiring', { params: { days } }),
   
-  create: (data: {
-    name: string;
-    description?: string;
-    category: string;
-    unit: string;
-    current_stock: number;
-    min_stock: number;
-    max_stock?: number;
-    cost_per_unit: number;
-    supplier?: string;
-    supplier_contact?: string;
-    expiry_date?: string;
-    is_perishable: boolean;
-    storage_location?: string;
-    image_url?: string;
-  }) => api.post<ApiResponse>('/inventory', data),
+  create: (data: FormData) => 
+    api.post<ApiResponse>('/inventory', data, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
   
-  update: (id: string, data: Partial<{
-    name: string;
-    description?: string;
-    category: string;
-    unit: string;
-    min_stock: number;
-    max_stock?: number;
-    cost_per_unit: number;
-    supplier?: string;
-    supplier_contact?: string;
-    expiry_date?: string;
-    is_perishable: boolean;
-    storage_location?: string;
-    image_url?: string;
-  }>) => api.put<ApiResponse>(`/inventory/${id}`, data),
+  update: (id: string, data: FormData) => 
+    api.put<ApiResponse>(`/inventory/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
   
   delete: (id: string) => 
     api.delete<ApiResponse>(`/inventory/${id}`),
@@ -350,6 +375,89 @@ export const reservationsApi = {
   reject: (id: string, admin_notes?: string) => 
     api.patch<ApiResponse>(`/reservations/${id}/reject`, { admin_notes }),
   
+  cancel: (id: string, admin_notes?: string) => 
+    api.patch<ApiResponse>(`/reservations/${id}/cancel`, { admin_notes }),
+  
+  delete: (id: string) => 
+    api.delete<ApiResponse>(`/reservations/${id}`),
+  
   checkByPhone: (whatsapp: string) => 
     api.get<ApiResponse>(`/reservations/check/${whatsapp}`),
+}
+
+export const staffApi = {
+  getAll: (params?: { role?: string; search?: string; active_only?: string; page?: number; limit?: number }) => 
+    api.get<ApiResponse>('/staff', { params }),
+  
+  getById: (id: string) => 
+    api.get<ApiResponse>(`/staff/${id}`),
+  
+  getRoles: () => 
+    api.get<ApiResponse<string[]>>('/staff/roles'),
+  
+  create: (data: FormData) => 
+    api.post<ApiResponse>('/staff', data),
+  
+  update: (id: string, data: FormData) => 
+    api.put<ApiResponse>(`/staff/${id}`, data),
+  
+  delete: (id: string) => 
+    api.delete<ApiResponse>(`/staff/${id}`),
+  
+  // Attendance
+  getAttendance: (params?: { staff_id?: string; date?: string; date_from?: string; date_to?: string; status?: string; page?: number }) => 
+    api.get<ApiResponse>('/staff/attendance', { params }),
+  
+  getTodayAttendance: () => 
+    api.get<ApiResponse>('/staff/attendance/today'),
+  
+  createAttendance: (data: { staff_id: string; date: string; check_in?: string; check_out?: string; status: string; notes?: string }) => 
+    api.post<ApiResponse>('/staff/attendance', data),
+  
+  updateAttendance: (id: string, data: Partial<{ check_in: string; check_out: string; status: string; notes: string }>) => 
+    api.put<ApiResponse>(`/staff/attendance/${id}`, data),
+  
+  deleteAttendance: (id: string) => 
+    api.delete<ApiResponse>(`/staff/attendance/${id}`),
+  
+  // Quick clock in/out
+  clockIn: (staff_id: string) => 
+    api.post<ApiResponse>('/staff/attendance/clock-in', { staff_id }),
+  
+  clockOut: (staff_id: string) => 
+    api.post<ApiResponse>('/staff/attendance/clock-out', { staff_id }),
+}
+
+export const notificationsApi = {
+  getAll: (params?: { page?: number; limit?: number; unread_only?: string }) => 
+    api.get<ApiResponse>('/notifications', { params }),
+  
+  markAsRead: (id: string) => 
+    api.patch<ApiResponse>(`/notifications/${id}/read`),
+  
+  markAllAsRead: () => 
+    api.patch<ApiResponse>('/notifications/read-all'),
+  
+  delete: (id: string) => 
+    api.delete<ApiResponse>(`/notifications/${id}`),
+}
+
+export const usersApi = {
+  getAll: (params?: { role?: string; search?: string; active_only?: string; page?: number; limit?: number }) => 
+    api.get<ApiResponse>('/users', { params }),
+  
+  getById: (id: string) => 
+    api.get<ApiResponse>(`/users/${id}`),
+  
+  create: (data: { username: string; email: string; password: string; role: string; firstName?: string; lastName?: string }) => 
+    api.post<ApiResponse>('/users', data),
+  
+  update: (id: string, data: Partial<{ username: string; email: string; password: string; role: string; firstName: string; lastName: string; isActive: boolean }>) => 
+    api.put<ApiResponse>(`/users/${id}`, data),
+  
+  delete: (id: string) => 
+    api.delete<ApiResponse>(`/users/${id}`),
+  
+  updatePermissions: (id: string, permissions: Record<string, boolean>) => 
+    api.patch<ApiResponse>(`/users/${id}/permissions`, { permissions }),
 }

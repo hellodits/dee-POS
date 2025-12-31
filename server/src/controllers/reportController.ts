@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { Order } from '../models/Order'
 import {
   getSalesReport,
   getTopSellingProducts,
@@ -6,7 +7,13 @@ import {
   getHourlySalesDistribution,
   getInventoryMovementReport,
   getLowStockProducts,
-  getCategoryPerformance
+  getCategoryPerformance,
+  getTransactionReport,
+  getCashierPerformance,
+  getReservationReport,
+  getStaffReport,
+  getMonthlyRevenueChart,
+  getMonthlyReservationChart
 } from '../services/reportService'
 
 /**
@@ -278,6 +285,251 @@ export const dashboardSummary = async (
         },
         low_stock_count: lowStockProducts.length,
         top_products: topProductsToday
+      }
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+
+/**
+ * @desc    Get transaction-based financial report
+ * @route   GET /api/reports/transactions
+ * @access  Private (POS - requires can_see_report)
+ */
+export const transactionReport = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+) => {
+  try {
+    const dateRange = parseDateRange(req)
+    const report = await getTransactionReport(dateRange)
+
+    res.json({
+      success: true,
+      data: report,
+      date_range: {
+        from: dateRange.start,
+        to: dateRange.end
+      }
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * @desc    Get cashier performance report
+ * @route   GET /api/reports/cashiers
+ * @access  Private (POS - requires can_see_report)
+ */
+export const cashierReport = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+) => {
+  try {
+    const dateRange = parseDateRange(req)
+    const report = await getCashierPerformance(dateRange)
+
+    res.json({
+      success: true,
+      data: report,
+      date_range: {
+        from: dateRange.start,
+        to: dateRange.end
+      }
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+
+/**
+ * @desc    Get reservation report
+ * @route   GET /api/reports/reservations
+ * @access  Private (POS - requires can_see_report)
+ */
+export const reservationReport = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+) => {
+  try {
+    const dateRange = parseDateRange(req)
+    const report = await getReservationReport(dateRange)
+
+    res.json({
+      success: true,
+      data: report,
+      date_range: {
+        from: dateRange.start,
+        to: dateRange.end
+      }
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * @desc    Get staff performance report
+ * @route   GET /api/reports/staff
+ * @access  Private (POS - requires can_see_report)
+ */
+export const staffReport = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+) => {
+  try {
+    const dateRange = parseDateRange(req)
+    const report = await getStaffReport(dateRange)
+
+    res.json({
+      success: true,
+      data: report,
+      date_range: {
+        from: dateRange.start,
+        to: dateRange.end
+      }
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * @desc    Get monthly revenue chart data
+ * @route   GET /api/reports/revenue-chart
+ * @access  Private (POS - requires can_see_report)
+ */
+export const revenueChart = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+) => {
+  try {
+    const dateRange = parseDateRange(req)
+    const chartData = await getMonthlyRevenueChart(dateRange)
+
+    res.json({
+      success: true,
+      data: chartData,
+      date_range: {
+        from: dateRange.start,
+        to: dateRange.end
+      }
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * @desc    Get monthly reservation chart data
+ * @route   GET /api/reports/reservation-chart
+ * @access  Private (POS - requires can_see_report)
+ */
+export const reservationChart = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+) => {
+  try {
+    const dateRange = parseDateRange(req)
+    const chartData = await getMonthlyReservationChart(dateRange)
+
+    res.json({
+      success: true,
+      data: chartData,
+      date_range: {
+        from: dateRange.start,
+        to: dateRange.end
+      }
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * @desc    Export orders to Excel
+ * @route   GET /api/reports/export-orders
+ * @access  Private (POS - requires can_see_report)
+ */
+export const exportOrders = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+) => {
+  try {
+    const dateRange = parseDateRange(req)
+    const { status, payment_status, order_source } = req.query
+    
+    // Build filter
+    const filter: any = {
+      createdAt: { $gte: dateRange.start, $lte: dateRange.end }
+    }
+    
+    if (status && status !== 'all') {
+      filter.status = status
+    }
+    
+    if (payment_status && payment_status !== 'all') {
+      filter.payment_status = payment_status
+    }
+    
+    if (order_source && order_source !== 'all') {
+      filter.order_source = order_source
+    }
+
+    const orders = await Order.find(filter)
+      .populate('table_id', 'number name')
+      .populate('user_id', 'username firstName lastName')
+      .sort({ createdAt: -1 })
+      .lean()
+
+    // Transform data for export
+    const exportData = orders.map(order => ({
+      'No. Order': order.order_number,
+      'Tanggal': new Date(order.createdAt).toLocaleDateString('id-ID'),
+      'Waktu': new Date(order.createdAt).toLocaleTimeString('id-ID'),
+      'Sumber': order.order_source === 'POS' ? 'Kasir' : 'Online',
+      'Meja': order.table_id ? `${(order.table_id as any).number} - ${(order.table_id as any).name}` : '-',
+      'Kasir': order.user_id ? `${(order.user_id as any).firstName || ''} ${(order.user_id as any).lastName || ''}`.trim() || (order.user_id as any).username : '-',
+      'Tamu': order.guest_info ? order.guest_info.name : '-',
+      'WhatsApp': order.guest_info ? order.guest_info.whatsapp : '-',
+      'Jumlah Tamu': order.guest_info ? order.guest_info.pax : '-',
+      'Status Order': order.status,
+      'Status Pembayaran': order.payment_status,
+      'Metode Pembayaran': order.payment_method || '-',
+      'Subtotal': order.financials.subtotal,
+      'Diskon': order.financials.discount,
+      'Pajak': order.financials.tax,
+      'Service Charge': order.financials.service_charge,
+      'Total': order.financials.total,
+      'Catatan': order.notes || '-',
+      'Selesai': order.completed_at ? new Date(order.completed_at).toLocaleString('id-ID') : '-'
+    }))
+
+    res.json({
+      success: true,
+      data: exportData,
+      total: exportData.length,
+      date_range: {
+        from: dateRange.start,
+        to: dateRange.end
       }
     })
 

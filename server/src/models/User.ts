@@ -17,7 +17,11 @@ export interface IUser extends Document {
   username: string
   email: string
   password: string
-  role: 'admin' | 'manager' | 'cashier'
+  firstName?: string
+  lastName?: string
+  address?: string
+  avatar?: string
+  role: 'admin' | 'manager' | 'cashier' | 'kitchen'
   permissions: IPermissions
   isActive: boolean
   lastLogin?: Date
@@ -61,9 +65,27 @@ const userSchema = new Schema<IUser>({
     minlength: [6, 'Password must be at least 6 characters'],
     select: false
   },
+  firstName: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'First name cannot exceed 50 characters']
+  },
+  lastName: {
+    type: String,
+    trim: true,
+    maxlength: [50, 'Last name cannot exceed 50 characters']
+  },
+  address: {
+    type: String,
+    trim: true,
+    maxlength: [500, 'Address cannot exceed 500 characters']
+  },
+  avatar: {
+    type: String // Cloudinary URL
+  },
   role: {
     type: String,
-    enum: ['admin', 'manager', 'cashier'],
+    enum: ['admin', 'manager', 'cashier', 'kitchen'],
     default: 'cashier'
   },
   permissions: {
@@ -112,7 +134,18 @@ userSchema.pre('save', function(next) {
           can_manage_tables: true
         }
         break
+      case 'kitchen':
+        this.permissions = {
+          can_void: false,
+          can_discount: false,
+          can_see_report: false,
+          can_manage_inventory: false,
+          can_manage_users: false,
+          can_manage_tables: false
+        }
+        break
       case 'cashier':
+      default:
         this.permissions = {
           can_void: false,
           can_discount: false,

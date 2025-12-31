@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { StaffList } from './StaffList'
 import { StaffForm } from './StaffForm'
 import { AttendanceList } from './AttendanceList'
-import { mockStaffData } from '../data/mockStaffData'
+import { useStaffData } from '../hooks/useStaffData'
 import { Staff, StaffFilters, SortOption, StaffRole } from '../types'
 
 interface StaffPageProps {
@@ -20,10 +20,21 @@ interface StaffPageProps {
 export function StaffPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: StaffPageProps) {
   const { t } = useTranslation()
   const location = useLocation()
+  const { 
+    staff, 
+    isLoading, 
+    error, 
+    addStaff, 
+    updateStaff, 
+    deleteStaff, 
+    filterAndSortStaff,
+    refetch 
+  } = useStaffData()
+  
   const [activeTab, setActiveTab] = useState<'staff' | 'attendance'>('staff')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null)
-  const [staffData, setStaffData] = useState<Staff[]>(mockStaffData)
+  const [isSaving, setIsSaving] = useState(false)
   const [filters, setFilters] = useState<StaffFilters>({
     sortBy: 'name',
     search: ''
@@ -45,35 +56,63 @@ export function StaffPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: Sta
     setIsFormOpen(true)
   }
 
-  const handleEditStaff = (staff: Staff) => {
-    setEditingStaff(staff)
+  const handleEditStaff = (staffMember: Staff) => {
+    setEditingStaff(staffMember)
     setIsFormOpen(true)
   }
 
-  const handleDeleteStaff = (staffId: string) => {
-    setStaffData(prev => prev.filter(staff => staff.id !== staffId))
+  const handleDeleteStaff = async (staffId: string) => {
+    if (!confirm(t('staff.confirmDeleteStaff'))) return
+    
+    try {
+      await deleteStaff(staffId)
+    } catch (err: any) {
+      alert(err.message)
+    }
   }
 
-  const handleSaveStaff = (staffData: Omit<Staff, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (editingStaff) {
-      // Update existing staff
-      setStaffData(prev => prev.map(staff => 
-        staff.id === editingStaff.id 
-          ? { ...staff, ...staffData, updatedAt: new Date().toISOString() }
-          : staff
-      ))
-    } else {
-      // Add new staff
-      const newStaff: Staff = {
-        ...staffData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+  const handleSaveStaff = async (staffData: Omit<Staff, 'id' | 'createdAt' | 'updatedAt'>, imageFile?: File | null) => {
+    setIsSaving(true)
+    
+    try {
+      // Create FormData for multipart upload
+      const formData = new FormData()
+      formData.append('fullName', staffData.fullName)
+      formData.append('email', staffData.email)
+      formData.append('phone', staffData.phone)
+      formData.append('role', staffData.role)
+      formData.append('salary', String(staffData.salary))
+      formData.append('dateOfBirth', staffData.dateOfBirth)
+      formData.append('shiftStart', staffData.shiftStart)
+      formData.append('shiftEnd', staffData.shiftEnd)
+      formData.append('address', staffData.address)
+      if (staffData.additionalDetails) {
+        formData.append('additionalDetails', staffData.additionalDetails)
       }
-      setStaffData(prev => [...prev, newStaff])
+      if (imageFile) {
+        console.log('📸 Adding image to FormData:', imageFile.name, imageFile.size, imageFile.type)
+        formData.append('profileImage', imageFile)
+      } else {
+        console.log('📷 No image file to upload')
+      }
+
+      if (editingStaff) {
+        console.log('📝 Editing staff with ID:', editingStaff.id)
+        await updateStaff(editingStaff.id, formData)
+      } else {
+        console.log('➕ Creating new staff')
+        await addStaff(formData)
+      }
+      
+      setIsFormOpen(false)
+      setEditingStaff(null)
+    } catch (err: any) {
+      console.error('❌ Save staff error:', err)
+      const errorMessage = err.message || 'Terjadi kesalahan'
+      alert(errorMessage)
+    } finally {
+      setIsSaving(false)
     }
-    setIsFormOpen(false)
-    setEditingStaff(null)
   }
 
   const handleSearchChange = (search: string) => {
@@ -89,33 +128,58 @@ export function StaffPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: Sta
   }
 
   // Filter and sort staff data
-  const filteredStaff = staffData
-    .filter(staff => {
-      const matchesSearch = !filters.search || 
-        staff.fullName.toLowerCase().includes(filters.search.toLowerCase()) ||
-        staff.email.toLowerCase().includes(filters.search.toLowerCase()) ||
-        staff.role.toLowerCase().includes(filters.search.toLowerCase())
-      
-      const matchesRole = !filters.role || staff.role === filters.role
-      
-      return matchesSearch && matchesRole
-    })
-    .sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'name':
-          return a.fullName.localeCompare(b.fullName)
-        case 'role':
-          return a.role.localeCompare(b.role)
-        case 'salary':
-          return b.salary - a.salary
-        case 'age':
-          return a.age - b.age
-        case 'recent':
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        default:
-          return 0
-      }
-    })
+  const filteredStaff = filterAndSortStaff(filters)
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex-1 bg-background min-h-screen flex flex-col">
+        <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
+          <div className="flex items-center space-x-3">
+            <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target">
+              {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
+            </button>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">{t('staff.title')}</h1>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Memuat data staff...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex-1 bg-background min-h-screen flex flex-col">
+        <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
+          <div className="flex items-center space-x-3">
+            <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target">
+              {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
+            </button>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">{t('staff.title')}</h1>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <p className="text-destructive font-medium mb-2">{error}</p>
+            <button 
+              onClick={refetch}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Coba Lagi
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 bg-background min-h-screen flex flex-col">
@@ -167,7 +231,7 @@ export function StaffPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: Sta
             <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                 <CardTitle className="text-lg font-semibold text-foreground">
-                  {t('staff.staffList')}
+                  {t('staff.staffList')} ({staff.length})
                 </CardTitle>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                   <div className="flex-1 sm:w-64">
@@ -226,6 +290,7 @@ export function StaffPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: Sta
         onSave={handleSaveStaff}
         editingStaff={editingStaff}
         isMobile={isMobile}
+        isSaving={isSaving}
       />
     </div>
   )

@@ -1,10 +1,13 @@
+// Load environment variables FIRST before any other imports
+import dotenv from 'dotenv'
+dotenv.config()
+
 import express from 'express'
 import { createServer } from 'http'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
-import dotenv from 'dotenv'
 import path from 'path'
 import { connectDB } from './config/database'
 import { initializeSocket } from './config/socket'
@@ -19,9 +22,9 @@ import reportRoutes from './routes/reportRoutes'
 import kitchenRoutes from './routes/kitchenRoutes'
 import reservationRoutes from './routes/reservationRoutes'
 import inventoryRoutes from './routes/inventoryRoutes'
-
-// Load environment variables
-dotenv.config()
+import staffRoutes from './routes/staffRoutes'
+import notificationRoutes from './routes/notificationRoutes'
+import userRoutes from './routes/userRoutes'
 
 const app = express()
 const httpServer = createServer(app)
@@ -34,6 +37,10 @@ initializeSocket(httpServer)
 const allowedOrigins = [
   process.env.POS_CLIENT_URL || 'http://localhost:3000',
   process.env.CUSTOMER_CLIENT_URL || 'http://localhost:4000',
+  'http://localhost:4000',
+  'http://localhost:3000',
+  'http://127.0.0.1:4000',
+  'http://127.0.0.1:3000',
   // Add more origins as needed
 ].filter(Boolean)
 
@@ -96,6 +103,9 @@ app.use('/api/reports', reportRoutes)
 app.use('/api/kitchen', kitchenRoutes)
 app.use('/api/reservations', reservationRoutes)
 app.use('/api/inventory', inventoryRoutes)
+app.use('/api/staff', staffRoutes)
+app.use('/api/notifications', notificationRoutes)
+app.use('/api/users', userRoutes)
 
 // Error handling middleware
 app.use(errorHandler)

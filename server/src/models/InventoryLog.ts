@@ -1,7 +1,17 @@
 import mongoose, { Document, Schema, Types } from 'mongoose'
 
 // Reason for inventory change
-export type InventoryChangeReason = 'ORDER' | 'WASTAGE' | 'RESTOCK' | 'ADJUSTMENT' | 'RETURN'
+export type InventoryChangeReason = 
+  | 'ORDER'       // Used for order
+  | 'WASTAGE'     // Wasted/spoiled
+  | 'RESTOCK'     // Restocked/purchased
+  | 'ADJUSTMENT'  // Manual adjustment
+  | 'RETURN'      // Returned to supplier
+  | 'USAGE'       // Used for production
+  | 'DAMAGED'     // Damaged goods
+  | 'EXPIRED'     // Expired goods
+  | 'LOST'        // Lost/missing
+  | 'OTHER'       // Other reasons
 
 export interface IInventoryLog extends Document {
   _id: Types.ObjectId
@@ -42,7 +52,7 @@ const inventoryLogSchema = new Schema<IInventoryLog>({
   },
   reason: {
     type: String,
-    enum: ['ORDER', 'WASTAGE', 'RESTOCK', 'ADJUSTMENT', 'RETURN'],
+    enum: ['ORDER', 'WASTAGE', 'RESTOCK', 'ADJUSTMENT', 'RETURN', 'USAGE', 'DAMAGED', 'EXPIRED', 'LOST', 'OTHER'],
     required: true,
     index: true
   },

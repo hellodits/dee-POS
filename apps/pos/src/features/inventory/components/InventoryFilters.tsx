@@ -36,25 +36,25 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
   ];
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 p-6 space-y-6 overflow-y-auto h-full">
+    <div className="w-72 lg:w-80 bg-card border-r border-border p-4 lg:p-6 space-y-5 overflow-y-auto h-full">
       {/* Product Status Tabs */}
       <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-3">Status Produk</h3>
+        <h3 className="text-sm font-medium text-foreground mb-2">Status Produk</h3>
         <div className="grid grid-cols-2 gap-2">
           {statusTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => onFiltersChange({ status: tab.id as any })}
               className={`
-                p-3 rounded-lg text-left transition-colors
+                px-3 py-2 rounded-lg text-center transition-colors text-sm
                 ${
                   filters.status === tab.id
-                    ? 'bg-red-50 border-2 border-red-600 text-red-700'
-                    : 'bg-gray-50 border-2 border-transparent text-gray-700 hover:bg-gray-100'
+                    ? 'bg-primary/10 border-2 border-primary text-primary font-medium'
+                    : 'bg-muted border-2 border-transparent text-muted-foreground hover:bg-accent'
                 }
               `}
             >
-              <div className="font-medium text-sm">{tab.label}</div>
+              {tab.label}
             </button>
           ))}
         </div>
@@ -62,12 +62,12 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
 
       {/* Category Dropdown */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">Kategori</label>
+        <label className="block text-sm font-medium text-foreground mb-1.5">Kategori</label>
         <div className="relative">
           <select
             value={filters.category}
             onChange={(e) => onFiltersChange({ category: e.target.value })}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 appearance-none"
+            className="w-full px-3 py-2 bg-muted border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary appearance-none text-sm"
           >
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -75,18 +75,18 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         </div>
       </div>
 
       {/* Stock Status Dropdown */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">Status Stok</label>
+        <label className="block text-sm font-medium text-foreground mb-1.5">Status Stok</label>
         <div className="relative">
           <select
             value={filters.stockStatus}
             onChange={(e) => onFiltersChange({ stockStatus: e.target.value })}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 appearance-none"
+            className="w-full px-3 py-2 bg-muted border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary appearance-none text-sm"
           >
             {stockStatuses.map((status) => (
               <option key={status.value} value={status.value}>
@@ -94,18 +94,18 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         </div>
       </div>
 
       {/* Value Dropdown */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">Rentang Harga</label>
+        <label className="block text-sm font-medium text-foreground mb-1.5">Rentang Harga</label>
         <div className="relative">
           <select
             value={filters.value}
             onChange={(e) => onFiltersChange({ value: e.target.value })}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 appearance-none"
+            className="w-full px-3 py-2 bg-muted border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary appearance-none text-sm"
           >
             {valueOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -113,44 +113,42 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         </div>
       </div>
 
       {/* Price Range - Vertical Layout */}
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">Harga Kustom</label>
-        <div className="space-y-3">
+        <label className="block text-sm font-medium text-foreground mb-1.5">Harga Kustom</label>
+        <div className="space-y-2">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Harga Minimum</label>
+            <label className="block text-xs text-muted-foreground mb-1">Harga Minimum</label>
             <input
               type="number"
-              placeholder="Masukkan harga minimum"
+              placeholder="Min"
               value={filters.priceMin || ''}
               onChange={(e) => onFiltersChange({ priceMin: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 bg-muted border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Harga Maksimum</label>
+            <label className="block text-xs text-muted-foreground mb-1">Harga Maksimum</label>
             <input
               type="number"
-              placeholder="Masukkan harga maksimum"
+              placeholder="Max"
               value={filters.priceMax || ''}
               onChange={(e) => onFiltersChange({ priceMax: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full px-3 py-2 bg-muted border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
             />
           </div>
-          <div className="text-xs text-gray-500">
-            Masukkan rentang harga dalam Rupiah
-          </div>
+          <p className="text-xs text-muted-foreground">Dalam Rupiah</p>
         </div>
       </div>
 
       {/* Reset Filters Button */}
       <button
         onClick={onResetFilters}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-primary/30 text-primary rounded-lg hover:bg-primary/5 transition-colors text-sm"
       >
         <RotateCcw className="w-4 h-4" />
         Reset Filter

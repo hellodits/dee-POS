@@ -35,6 +35,9 @@ export interface StaffFormData {
 export interface AttendanceRecord {
   id: string
   staffId: string
+  staffName?: string
+  staffRole?: string
+  staffImage?: string
   date: string
   timings: string
   status: AttendanceStatus

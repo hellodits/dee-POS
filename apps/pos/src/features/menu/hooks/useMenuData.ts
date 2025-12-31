@@ -116,11 +116,11 @@ export const useMenuData = () => {
       formDataObj.append('category', formData.categoryId);
       formDataObj.append('description', formData.description || '');
       formDataObj.append('is_active', 'true');
+      formDataObj.append('cost_price', '0'); // Default cost price
       
-      // If image is a URL, we can't upload it directly
-      // For now, just use the URL
-      if (formData.image && !formData.image.startsWith('http')) {
-        // Handle file upload if needed
+      // Handle image file upload
+      if (formData.imageFile) {
+        formDataObj.append('image', formData.imageFile);
       }
 
       const response = await productsApi.create(formDataObj);
@@ -144,6 +144,11 @@ export const useMenuData = () => {
       formDataObj.append('category', formData.categoryId);
       formDataObj.append('description', formData.description || '');
       formDataObj.append('is_active', formData.stock > 0 ? 'true' : 'false');
+
+      // Handle image file upload
+      if (formData.imageFile) {
+        formDataObj.append('image', formData.imageFile);
+      }
 
       const response = await productsApi.update(itemId, formDataObj);
       

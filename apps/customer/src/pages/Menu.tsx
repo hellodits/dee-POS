@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Calendar, ArrowRight } from "lucide-react";
+import { Plus, Minus, Search, Utensils, X } from "lucide-react";
 import { formatPrice } from "../lib/utils";
 import { useCart } from "../context/CartContext";
 import { productsApi, type Product } from "../lib/api";
@@ -8,7 +8,19 @@ import { productsApi, type Product } from "../lib/api";
 const categories = ["All Menu", "Makanan", "Minuman", "Snack"];
 
 // Food Card Component
-function FoodCard({ product, onAdd }: { product: Product; onAdd: () => void }) {
+function FoodCard({ 
+  product, 
+  qty, 
+  onAdd, 
+  onIncrement, 
+  onDecrement 
+}: { 
+  product: Product; 
+  qty: number;
+  onAdd: () => void;
+  onIncrement: () => void;
+  onDecrement: () => void;
+}) {
   const imageUrl = product.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60";
   
   return (
@@ -19,6 +31,12 @@ function FoodCard({ product, onAdd }: { product: Product; onAdd: () => void }) {
           alt={product.name}
           className="w-24 h-24 rounded-2xl object-cover"
         />
+        {/* Qty Badge on Image */}
+        {qty > 0 && (
+          <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center shadow-md">
+            <span className="text-white text-xs font-bold">{qty}</span>
+          </div>
+        )}
       </div>
       <div className="flex-1 ml-4 flex flex-col justify-between min-w-0">
         <div>
@@ -35,37 +53,35 @@ function FoodCard({ product, onAdd }: { product: Product; onAdd: () => void }) {
           </span>
         </div>
       </div>
-      <button
-        onClick={onAdd}
-        className="absolute bottom-4 right-4 w-8 h-8 bg-red-600 rounded-full flex items-center justify-center shadow-md hover:bg-red-700 transition-colors"
-      >
-        <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
-      </button>
-    </div>
-  );
-}
-
-// Reservation Banner Component
-function ReservationBanner({ onClick }: { onClick: () => void }) {
-  return (
-    <div className="relative bg-white rounded-3xl p-4 mx-4 mb-4 shadow-[0_4px_20px_rgb(0,0,0,0.05)] overflow-hidden">
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-yellow-50/80 to-transparent pointer-events-none" />
-      <div className="relative flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-red-600" />
+      
+      {/* Add/Qty Controls */}
+      <div className="absolute bottom-4 right-4">
+        {qty === 0 ? (
+          <button
+            onClick={onAdd}
+            className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center shadow-md hover:bg-red-700 transition-colors"
+          >
+            <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 bg-red-50 rounded-full px-1 py-1">
+            <button
+              onClick={onDecrement}
+              className="w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors border border-red-100"
+            >
+              <Minus className="w-4 h-4 text-red-600" strokeWidth={2.5} />
+            </button>
+            <span className="text-red-600 font-bold text-sm min-w-[20px] text-center">
+              {qty}
+            </span>
+            <button
+              onClick={onIncrement}
+              className="w-7 h-7 bg-red-600 rounded-full flex items-center justify-center shadow-sm hover:bg-red-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 text-white" strokeWidth={2.5} />
+            </button>
           </div>
-          <div>
-            <h4 className="font-bold text-gray-900 text-base">Reservasi Meja</h4>
-            <p className="text-gray-400 text-sm">Book your favorite table</p>
-          </div>
-        </div>
-        <button 
-          onClick={onClick}
-          className="w-10 h-10 rounded-full border-2 border-yellow-300 flex items-center justify-center hover:bg-yellow-50 transition-colors"
-        >
-          <ArrowRight className="w-5 h-5 text-yellow-600" />
-        </button>
+        )}
       </div>
     </div>
   );
@@ -113,7 +129,14 @@ export default function Menu() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { items, addItem, getSubtotal } = useCart();
+  const [searchQuery, setSearchQuery] = useState("");
+  const { items, addItem, updateQty, getSubtotal } = useCart();
+
+  // Get qty for a specific product
+  const getProductQty = (productId: string) => {
+    const item = items.find(i => i.id === productId);
+    return item?.qty || 0;
+  };
 
   // Fetch products from API
   useEffect(() => {
@@ -135,10 +158,14 @@ export default function Menu() {
     fetchProducts();
   }, []);
 
-  // Filter products by category
-  const filteredProducts = activeCategory === "All Menu" 
-    ? products 
-    : products.filter(p => p.category === activeCategory);
+  // Filter products by category and search
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = activeCategory === "All Menu" || p.category === activeCategory;
+    const matchesSearch = searchQuery === "" || 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
 
   const handleAddToCart = (product: Product) => {
     addItem({
@@ -149,12 +176,18 @@ export default function Menu() {
     });
   };
 
-  const handleCheckout = () => {
-    navigate("/checkout");
+  const handleIncrement = (product: Product) => {
+    const currentQty = getProductQty(product._id);
+    updateQty(product._id, currentQty + 1);
   };
 
-  const handleReservation = () => {
-    navigate("/reservation");
+  const handleDecrement = (product: Product) => {
+    const currentQty = getProductQty(product._id);
+    updateQty(product._id, currentQty - 1);
+  };
+
+  const handleCheckout = () => {
+    navigate("/checkout");
   };
 
   if (loading) {
@@ -188,14 +221,16 @@ export default function Menu() {
     <div className="min-h-screen bg-gray-50 pb-28">
       {/* Sticky Header */}
       <div className="sticky top-0 z-40 bg-white shadow-sm">
-        <div className="flex items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-bold text-red-600">DEEPOS</h1>
-          <div className="w-8 h-8 bg-gray-100 rounded-full" />
+        <div className="px-4 py-4 flex items-center">
+          <button 
+            onClick={() => navigate("/")}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-700" />
+          </button>
+          <h2 className="flex-1 text-lg font-bold text-gray-900 text-center pr-8">MENU</h2>
         </div>
-        <div className="px-4 pb-3">
-          <h2 className="text-lg font-bold text-gray-900">Pesan Makanan</h2>
-        </div>
-        <div className="flex gap-3 px-4 pb-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-3 px-4 pb-3 overflow-x-auto scrollbar-hide">
           {categories.map((category) => (
             <button
               key={category}
@@ -210,6 +245,20 @@ export default function Menu() {
             </button>
           ))}
         </div>
+        {/* Search Bar */}
+        <div className="px-4 pb-4">
+          <div className="flex items-center bg-gray-100 rounded-full px-4 py-3">
+            <Search className="w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Lagi mau mamam apa?"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400 mx-3"
+            />
+            <Utensils className="w-5 h-5 text-gray-400" />
+          </div>
+        </div>
       </div>
 
       {/* Food List */}
@@ -223,14 +272,14 @@ export default function Menu() {
             <FoodCard
               key={product._id}
               product={product}
+              qty={getProductQty(product._id)}
               onAdd={() => handleAddToCart(product)}
+              onIncrement={() => handleIncrement(product)}
+              onDecrement={() => handleDecrement(product)}
             />
           ))
         )}
       </div>
-
-      {/* Reservation Banner */}
-      <ReservationBanner onClick={handleReservation} />
 
       {/* Sticky Bottom Cart */}
       <StickyCart

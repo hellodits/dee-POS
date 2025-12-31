@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { validationResult } from 'express-validator'
 import { AuthService } from '../services/authService'
+import { uploadToCloudinary, deleteFromCloudinary, extractPublicId } from '../config/cloudinary'
 
 export class AuthController {
   private authService: AuthService
@@ -82,6 +83,64 @@ export class AuthController {
       res.status(404).json({
         success: false,
         error: error.message || 'User not found'
+      })
+    }
+  }
+
+  // @desc    Update user profile
+  // @route   PUT /api/auth/profile
+  // @access  Private
+  updateProfile = async (req: any, res: Response, next: NextFunction) => {
+    try {
+      const { firstName, lastName, email, address, newPassword } = req.body
+      
+      // Handle avatar upload to Cloudinary
+      let avatarUrl: string | undefined
+      if (req.file && req.file.buffer && req.file.buffer.length > 0) {
+        console.log('📸 Uploading avatar to Cloudinary...')
+        
+        // Get current user to check for existing avatar
+        const currentUser = await this.authService.getMe(req.user.id)
+        
+        // Delete old avatar if exists
+        if (currentUser.avatar) {
+          const oldPublicId = extractPublicId(currentUser.avatar)
+          if (oldPublicId) {
+            await deleteFromCloudinary(oldPublicId)
+            console.log('🗑️ Old avatar deleted')
+          }
+        }
+        
+        // Upload new avatar
+        const result = await uploadToCloudinary(req.file, {
+          folder: 'deepos/avatars',
+          width: 200,
+          height: 200
+        })
+        avatarUrl = result.secure_url
+        console.log('✅ Avatar uploaded:', avatarUrl)
+      }
+
+      const updateData: any = {}
+      if (firstName !== undefined) updateData.firstName = firstName
+      if (lastName !== undefined) updateData.lastName = lastName
+      if (email !== undefined) updateData.email = email
+      if (address !== undefined) updateData.address = address
+      if (avatarUrl) updateData.avatar = avatarUrl
+      if (newPassword) updateData.password = newPassword
+
+      const user = await this.authService.updateProfile(req.user.id, updateData)
+
+      res.status(200).json({
+        success: true,
+        data: user,
+        message: 'Profile updated successfully'
+      })
+    } catch (error: any) {
+      console.error('Update profile error:', error)
+      res.status(400).json({
+        success: false,
+        error: error.message || 'Failed to update profile'
       })
     }
   }

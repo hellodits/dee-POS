@@ -33,6 +33,7 @@ function mapApiOrderToLocal(apiOrder: any): Order {
     tip: apiOrder.financials.service_charge || 0,
     total: apiOrder.financials.total,
     status: statusMap[apiOrder.status] || 'in-process',
+    paymentMethod: apiOrder.payment_method, // Keep original API value (CASH, CARD, QRIS, TRANSFER)
     createdAt: apiOrder.createdAt,
     updatedAt: apiOrder.updatedAt,
     completedAt: apiOrder.completed_at

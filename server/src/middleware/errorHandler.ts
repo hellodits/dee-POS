@@ -14,11 +14,23 @@ export const errorHandler = (
   let error = { ...err }
   error.message = err.message
 
-  // Log error
-  console.error(err)
+  // Log error with more details
+  console.error('🔴 Error Handler caught:', {
+    name: err.name,
+    message: err.message,
+    path: req.path,
+    method: req.method,
+    stack: err.stack?.split('\n').slice(0, 3).join('\n')
+  })
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
+    const castErr = err as any
+    console.error('🔴 CastError details:', {
+      kind: castErr.kind,
+      value: castErr.value,
+      path: castErr.path
+    })
     const message = 'Resource not found'
     error = { ...error, message, statusCode: 404 }
   }

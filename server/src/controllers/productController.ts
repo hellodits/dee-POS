@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { Product } from '../models/Product'
 import { InventoryLog } from '../models/InventoryLog'
 import { Types } from 'mongoose'
-import { getFileUrl, deleteFile } from '../middleware/upload'
+import { uploadToCloudinary, deleteFromCloudinary, extractPublicId } from '../config/cloudinary'
 
 /**
  * @desc    Get all products (with filters for Customer App)
@@ -165,7 +165,7 @@ export const getCategories = async (
 }
 
 /**
- * @desc    Create product (with image upload)
+ * @desc    Create product (with Cloudinary image upload)
  * @route   POST /api/products
  * @access  Private (POS - Admin/Manager)
  */
@@ -177,9 +177,24 @@ export const createProduct = async (
   try {
     const productData = { ...req.body }
 
-    // Handle image upload if file is present
+    // Handle image upload to Cloudinary
     if (req.file) {
-      productData.image_url = getFileUrl(req.file.filename)
+      try {
+        const result = await uploadToCloudinary(req.file, {
+          folder: 'deepos/products',
+          width: 500,
+          height: 500,
+          format: 'webp',
+          quality: 'auto'
+        })
+        productData.image_url = result.secure_url
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError)
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to upload image'
+        })
+      }
     }
 
     // Parse attributes if sent as JSON string
@@ -199,11 +214,6 @@ export const createProduct = async (
     })
 
   } catch (error: any) {
-    // Clean up uploaded file if product creation fails
-    if (req.file) {
-      deleteFile(req.file.filename)
-    }
-
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -215,7 +225,7 @@ export const createProduct = async (
 }
 
 /**
- * @desc    Update product (with image upload)
+ * @desc    Update product (with Cloudinary image upload)
  * @route   PUT /api/products/:id
  * @access  Private (POS - Admin/Manager)
  */
@@ -228,17 +238,34 @@ export const updateProduct = async (
     // Don't allow direct stock updates through this endpoint
     const { stock, ...updateData } = req.body
 
-    // Handle image upload
+    // Handle image upload to Cloudinary
     if (req.file) {
-      // Get old product to delete old image
-      const oldProduct = await Product.findById(req.params.id)
-      if (oldProduct?.image_url) {
-        const oldFilename = oldProduct.image_url.split('/').pop()
-        if (oldFilename) {
-          deleteFile(oldFilename)
+      try {
+        // Get old product to delete old image from Cloudinary
+        const oldProduct = await Product.findById(req.params.id)
+        if (oldProduct?.image_url) {
+          const publicId = extractPublicId(oldProduct.image_url)
+          if (publicId) {
+            await deleteFromCloudinary(publicId)
+          }
         }
+
+        // Upload new image
+        const result = await uploadToCloudinary(req.file, {
+          folder: 'deepos/products',
+          width: 500,
+          height: 500,
+          format: 'webp',
+          quality: 'auto'
+        })
+        updateData.image_url = result.secure_url
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError)
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to upload image'
+        })
       }
-      updateData.image_url = getFileUrl(req.file.filename)
     }
 
     // Parse attributes if sent as JSON string
@@ -257,10 +284,6 @@ export const updateProduct = async (
     )
 
     if (!product) {
-      // Clean up uploaded file if product not found
-      if (req.file) {
-        deleteFile(req.file.filename)
-      }
       return res.status(404).json({
         success: false,
         error: 'Product not found'
@@ -273,10 +296,6 @@ export const updateProduct = async (
     })
 
   } catch (error) {
-    // Clean up uploaded file on error
-    if (req.file) {
-      deleteFile(req.file.filename)
-    }
     next(error)
   }
 }

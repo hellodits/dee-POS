@@ -230,6 +230,10 @@ export class AuthService {
           id: user._id,
           username: user.username,
           email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          address: user.address,
+          avatar: user.avatar,
           role: user.role,
           permissions: user.permissions,
           isActive: user.isActive,
@@ -247,6 +251,77 @@ export class AuthService {
     if (!user) {
       throw new Error('User not found')
     }
+
+    const { password: _, ...userWithoutPassword } = user
+    return userWithoutPassword
+  }
+
+  async updateProfile(userId: string, data: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    address?: string
+    avatar?: string
+    password?: string
+  }): Promise<any> {
+    if (this.isDatabaseConnected()) {
+      try {
+        const { User } = await import('../models/User')
+        
+        const user = await User.findById(userId).select('+password')
+        if (!user) {
+          throw new Error('User not found')
+        }
+
+        // Update fields
+        if (data.firstName !== undefined) user.firstName = data.firstName
+        if (data.lastName !== undefined) user.lastName = data.lastName
+        if (data.email !== undefined) user.email = data.email
+        if (data.address !== undefined) user.address = data.address
+        if (data.avatar !== undefined) user.avatar = data.avatar
+        if (data.password) user.password = data.password // Will be hashed by pre-save hook
+
+        await user.save()
+
+        return {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          address: user.address,
+          avatar: user.avatar,
+          role: user.role,
+          permissions: user.permissions,
+          isActive: user.isActive,
+          lastLogin: user.lastLogin,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        }
+      } catch (error: any) {
+        throw error
+      }
+    }
+
+    // Use mock storage (fallback)
+    const userIndex = mockUsers.findIndex(u => u.id === userId)
+    if (userIndex === -1) {
+      throw new Error('User not found')
+    }
+
+    const user = mockUsers[userIndex]
+    if (data.firstName !== undefined) user.firstName = data.firstName
+    if (data.lastName !== undefined) user.lastName = data.lastName
+    if (data.email !== undefined) user.email = data.email
+    if (data.address !== undefined) user.address = data.address
+    if (data.avatar !== undefined) user.avatar = data.avatar
+    if (data.password) {
+      const salt = await bcrypt.genSalt(10)
+      user.password = await bcrypt.hash(data.password, salt)
+    }
+    user.updatedAt = new Date()
+
+    mockUsers[userIndex] = user
 
     const { password: _, ...userWithoutPassword } = user
     return userWithoutPassword

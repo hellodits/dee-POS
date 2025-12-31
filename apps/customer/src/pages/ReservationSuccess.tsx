@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Check,
   Calendar,
@@ -6,31 +7,82 @@ import {
   Ticket,
   MessageSquare,
   Home,
+  AlertCircle,
+  Phone,
 } from "lucide-react";
 
-interface ReservationSuccessProps {
-  onBackToHome: () => void;
-  onConfirm: () => void;
-  reservationData?: {
-    date: string;
-    time: string;
-    guests: number;
-    bookingId: string;
-    phone: string;
-  };
-}
+export default function ReservationSuccess() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Get reservation data from navigation state
+  const { reservation, date, time, pax, name } = location.state || {};
 
-export default function ReservationSuccess({
-  onBackToHome,
-  onConfirm,
-  reservationData = {
-    date: "24 Okt",
-    time: "19:00 WIB",
-    guests: 2,
-    bookingId: "#B-8829",
-    phone: "0812-3456-7890",
-  },
-}: ReservationSuccessProps) {
+  const handleBackToHome = () => {
+    navigate("/");
+  };
+
+  // Handle WhatsApp confirmation
+  const handleWhatsAppConfirmation = () => {
+    const restoPhone = "6285155285722"; // Restaurant WhatsApp number
+    const bookingIdText = `#R-${reservation._id?.slice(-6).toUpperCase() || '000000'}`;
+    
+    // Format message
+    const message = `Halo, saya ingin mengkonfirmasi reservasi:
+
+📋 *Detail Reservasi*
+━━━━━━━━━━━━━━━━
+🎫 Booking ID: ${bookingIdText}
+👤 Nama: ${name}
+📅 Tanggal: ${date}
+🕐 Jam: ${time} WIB
+👥 Jumlah Tamu: ${pax} Orang
+${reservation.notes ? `📝 Catatan: ${reservation.notes}` : ''}
+━━━━━━━━━━━━━━━━
+
+Mohon konfirmasi ketersediaan meja. Terima kasih! 🙏`;
+
+    // Encode message for URL
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${restoPhone}?text=${encodedMessage}`;
+    
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank');
+  };
+
+  // If no reservation data, show error
+  if (!reservation) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+        <AlertCircle className="w-16 h-16 text-gray-300 mb-4" />
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Data Tidak Ditemukan</h2>
+        <p className="text-gray-500 text-center mb-6">
+          Tidak ada data reservasi. Silakan buat reservasi baru.
+        </p>
+        <button
+          onClick={() => navigate("/reservation")}
+          className="px-6 py-3 bg-red-600 text-white font-semibold rounded-full hover:bg-red-700 transition-colors"
+        >
+          Buat Reservasi
+        </button>
+      </div>
+    );
+  }
+
+  // Format booking ID from MongoDB _id
+  const bookingId = `#R-${reservation._id?.slice(-6).toUpperCase() || '000000'}`;
+  
+  // Format WhatsApp number for display
+  const formatPhone = (phone: string) => {
+    if (!phone) return '-';
+    // Convert 62xxx to 08xxx for display
+    if (phone.startsWith('62')) {
+      phone = '0' + phone.substring(2);
+    }
+    // Add dashes for readability
+    return phone.replace(/(\d{4})(\d{4})(\d+)/, '$1-$2-$3');
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -58,11 +110,18 @@ export default function ReservationSuccess({
         {/* Headings */}
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Reservasi Berhasil!
+            Reservasi Terkirim!
           </h2>
           <p className="text-gray-500">
-            Terima kasih! Meja Anda telah berhasil diamankan.
+            Terima kasih, {name}! Reservasi Anda sedang menunggu konfirmasi dari restoran.
           </p>
+        </div>
+
+        {/* Status Badge */}
+        <div className="flex justify-center mb-6">
+          <span className="px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
+            ⏳ Menunggu Konfirmasi
+          </span>
         </div>
 
         {/* Ticket Card */}
@@ -82,7 +141,7 @@ export default function ReservationSuccess({
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-amber-500" />
                   <span className="font-bold text-gray-900">
-                    {reservationData.date}
+                    {date || '-'}
                   </span>
                 </div>
               </div>
@@ -95,7 +154,7 @@ export default function ReservationSuccess({
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-amber-500" />
                   <span className="font-bold text-gray-900">
-                    {reservationData.time}
+                    {time || '-'} WIB
                   </span>
                 </div>
               </div>
@@ -108,7 +167,7 @@ export default function ReservationSuccess({
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-amber-500" />
                   <span className="font-bold text-gray-900">
-                    {reservationData.guests} Orang
+                    {pax || 0} Orang
                   </span>
                 </div>
               </div>
@@ -121,7 +180,7 @@ export default function ReservationSuccess({
                 <div className="flex items-center gap-2">
                   <Ticket className="w-5 h-5 text-amber-500" />
                   <span className="font-bold text-gray-900">
-                    {reservationData.bookingId}
+                    {bookingId}
                   </span>
                 </div>
               </div>
@@ -135,39 +194,56 @@ export default function ReservationSuccess({
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 text-sm">
-                    Konfirmasi WhatsApp
+                    Konfirmasi via WhatsApp
                   </p>
                   <p className="text-gray-500 text-sm">
-                    Detail reservasi telah dikirimkan ke nomor WhatsApp{" "}
+                    Kami akan mengirimkan konfirmasi ke nomor{" "}
                     <span className="font-medium text-gray-700">
-                      {reservationData.phone}
-                    </span>
-                    .
+                      {formatPhone(reservation.whatsapp)}
+                    </span>{" "}
+                    setelah reservasi disetujui.
                   </p>
                 </div>
               </div>
             </div>
+
+            {/* Notes if any */}
+            {reservation.notes && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-xl">
+                <p className="text-xs text-blue-600 font-medium mb-1">Catatan:</p>
+                <p className="text-sm text-blue-800">{reservation.notes}</p>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Info Box */}
+        <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
+          <p className="text-sm text-amber-800">
+            <strong>Catatan:</strong> Reservasi akan dikonfirmasi oleh pihak restoran dalam waktu 1x24 jam. 
+            Harap datang 10 menit sebelum waktu reservasi.
+          </p>
         </div>
       </div>
 
       {/* Fixed Footer Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white px-6 py-4 space-y-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-white px-6 py-4 border-t border-gray-100">
         {/* Primary Button - Back to Home */}
         <button
-          onClick={onBackToHome}
-          className="w-full bg-red-600 text-white font-semibold py-4 rounded-full flex items-center justify-center gap-2 hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+          onClick={handleBackToHome}
+          className="w-full bg-red-600 text-white font-semibold py-4 rounded-full flex items-center justify-center gap-2 hover:bg-red-700 transition-colors shadow-lg shadow-red-200 mb-3"
         >
           <Home className="w-5 h-5" />
           Kembali ke Beranda
         </button>
-
-        {/* Secondary Button - Confirm */}
+        
+        {/* Secondary Button - WhatsApp Confirmation */}
         <button
-          onClick={onConfirm}
-          className="w-full bg-white text-amber-600 font-semibold py-4 rounded-full border-2 border-amber-400 hover:bg-amber-50 transition-colors"
+          onClick={handleWhatsAppConfirmation}
+          className="w-full bg-green-500 text-white font-semibold py-4 rounded-full flex items-center justify-center gap-2 hover:bg-green-600 transition-colors shadow-lg shadow-green-200"
         >
-          Konfirmasi
+          <Phone className="w-5 h-5" />
+          Konfirmasi Reservasi via WhatsApp
         </button>
       </div>
     </div>
