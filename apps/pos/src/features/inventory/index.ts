@@ -1,3 +1,7 @@
 export * from './components';
-export * from './types';
+export { 
+  type InventoryItem as InventoryItemType, 
+  type InventoryFilters as InventoryFiltersType,
+  type InventoryFormData
+} from './types';
 export * from './hooks';

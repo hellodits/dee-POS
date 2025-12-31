@@ -37,6 +37,7 @@ export interface AuthResponse {
       can_manage_tables: boolean
     }
     isActive: boolean
+    createdAt?: string
     lastLogin?: string
   }
   token: string
@@ -161,13 +162,13 @@ export const auth = {
     return user.permissions?.[permission] ?? false
   },
 
-  getMe: async () => {
-    const response = await api.get<ApiResponse>('/auth/me')
-    return response.data.data
+  getMe: async (): Promise<AuthResponse['user'] | null> => {
+    const response = await api.get<ApiResponse<AuthResponse['user']>>('/auth/me')
+    return response.data.data || null
   },
 
-  updateProfile: async (data: FormData) => {
-    const response = await api.put<ApiResponse>('/auth/profile', data, {
+  updateProfile: async (data: FormData): Promise<ApiResponse<AuthResponse['user']>> => {
+    const response = await api.put<ApiResponse<AuthResponse['user']>>('/auth/profile', data, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     // Update stored user data

@@ -4,7 +4,6 @@ import {
   Reservation, 
   ReservationFormData, 
   Table, 
-  LegacyReservation, 
   LegacyTable,
   toLegacyReservation 
 } from '../types';
@@ -156,7 +155,7 @@ export const useReservationData = () => {
   };
 
   // Legacy compatibility functions
-  const updateReservation = async (id: string, _formData: ReservationFormData) => {
+  const updateReservation = async (_id: string, _formData: ReservationFormData) => {
     // Note: Backend doesn't have update endpoint, only approve/reject
     console.warn('Update reservation not implemented in backend');
     return { success: false, error: 'Fitur update belum tersedia' };

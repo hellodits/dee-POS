@@ -140,7 +140,7 @@ export function useReports() {
     }
   }, [fetchRevenueReport, fetchOrdersReport, fetchReservationReport, fetchStaffReport, reportData.orders.filters]);
 
-  const exportReport = async (tab: ReportTab, format: 'pdf' | 'excel' | 'csv' = 'excel') => {
+  const exportReport = async (tab: ReportTab, _format: 'pdf' | 'excel' | 'csv' = 'excel') => {
     try {
       let data: any[] = [];
       let filename = '';

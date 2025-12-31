@@ -129,11 +129,11 @@ export function useProfile() {
       if (result.success && result.data) {
         setCurrentUserData(prev => prev ? {
           ...prev,
-          firstName: result.data.firstName || prev.firstName,
-          lastName: result.data.lastName || prev.lastName,
-          email: result.data.email,
-          address: result.data.address || '',
-          avatar: result.data.avatar,
+          firstName: result.data!.firstName || prev.firstName,
+          lastName: result.data!.lastName || prev.lastName,
+          email: result.data!.email,
+          address: result.data!.address || '',
+          avatar: result.data!.avatar,
         } : null);
         
         return { success: true, message: 'Profile berhasil diperbarui' };

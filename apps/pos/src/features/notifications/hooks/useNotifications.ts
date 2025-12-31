@@ -24,13 +24,15 @@ export const useNotifications = () => {
       });
       
       if (response.data.success) {
-        const notifs = (response.data.data || []).map((n: Notification) => ({
+        const dataArray = response.data.data as Notification[] || [];
+        const notifs = dataArray.map((n: Notification) => ({
           ...n,
           id: n._id // Add id alias
         }));
         setNotifications(notifs);
-        if (response.data.stats) {
-          setStats(response.data.stats);
+        const responseWithStats = response.data as { stats?: NotificationStats };
+        if (responseWithStats.stats) {
+          setStats(responseWithStats.stats);
         }
       }
     } catch (err) {

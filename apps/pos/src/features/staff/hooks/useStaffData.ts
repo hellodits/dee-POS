@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { staffApi } from '@/lib/api'
-import { Staff, StaffFilters, AttendanceRecord } from '../types'
+import { Staff, StaffFilters, AttendanceRecord, AttendanceStatus } from '../types'
 
 interface UseStaffDataReturn {
   staff: Staff[]
@@ -258,7 +258,11 @@ export function useStaffData(): UseStaffDataReturn {
         console.log('✅ Attendance updated successfully')
         // Update local state
         setAttendance(prev => prev.map(a => 
-          a.id === id ? { ...a, ...data } : a
+          a.id === id ? { 
+            ...a, 
+            timings: data.timings ?? a.timings,
+            status: (data.status as AttendanceStatus) ?? a.status
+          } : a
         ))
         return true
       }
