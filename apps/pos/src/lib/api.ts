@@ -45,7 +45,9 @@ export interface AuthResponse {
 
 // Create axios instance
 const getBaseURL = () => {
-  const envUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+  let envUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+  // Remove trailing slash if exists
+  envUrl = envUrl.replace(/\/+$/, '')
   // Ensure URL ends with /api
   return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`
 }
