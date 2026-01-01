@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Header } from './Header'
 import { StatsCard } from './StatsCard'
@@ -16,12 +15,7 @@ interface DashboardPageProps {
 
 export function DashboardPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: DashboardPageProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-  const { stats, popularDishes, topSellingDishes, chartData, isLoading, error, refetch } = useDashboardData()
-
-  const handleSeeAllMenu = () => {
-    navigate('/menu')
-  }
+  const { stats, popularDishes, topSellingDishes, chartData, isLoading, error, activeFilter, refetch, setFilter } = useDashboardData()
 
   // Loading state
   if (isLoading) {
@@ -101,17 +95,9 @@ export function DashboardPage({ isSidebarCollapsed, isMobile, onToggleSidebar }:
           {/* Left Popular Dishes - By Revenue */}
           <Card className="bg-card border border-border">
             <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base sm:text-lg font-semibold text-foreground">
-                  {t('dashboard.popularDishes')}
-                </CardTitle>
-                <button 
-                  onClick={handleSeeAllMenu}
-                  className="text-xs sm:text-sm text-primary hover:text-primary/80 font-medium touch-target"
-                >
-                  {t('dashboard.seeAll')}
-                </button>
-              </div>
+              <CardTitle className="text-base sm:text-lg font-semibold text-foreground">
+                {t('dashboard.popularDishes')}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {popularDishes.length > 0 ? (
@@ -135,17 +121,9 @@ export function DashboardPage({ isSidebarCollapsed, isMobile, onToggleSidebar }:
           {/* Right Popular Dishes - By Order Count */}
           <Card className="bg-card border border-border">
             <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base sm:text-lg font-semibold text-foreground">
-                  {t('dashboard.topSelling') || 'Paling Laris'}
-                </CardTitle>
-                <button 
-                  onClick={handleSeeAllMenu}
-                  className="text-xs sm:text-sm text-primary hover:text-primary/80 font-medium touch-target"
-                >
-                  {t('dashboard.seeAll')}
-                </button>
-              </div>
+              <CardTitle className="text-base sm:text-lg font-semibold text-foreground">
+                {t('dashboard.topSelling') || 'Paling Laris'}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {topSellingDishes.length > 0 ? (
@@ -169,7 +147,11 @@ export function DashboardPage({ isSidebarCollapsed, isMobile, onToggleSidebar }:
 
         {/* Overview Chart - Responsive */}
         <div className="w-full">
-          <OverviewChart data={chartData} />
+          <OverviewChart 
+            data={chartData} 
+            activeFilter={activeFilter}
+            onFilterChange={setFilter}
+          />
         </div>
       </main>
     </div>

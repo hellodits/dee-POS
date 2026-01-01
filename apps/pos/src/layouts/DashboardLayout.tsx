@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { Sidebar } from '@/features/dashboard/components/Sidebar'
 import { DashboardPage } from '@/features/dashboard/components/DashboardPage'
 import { StaffPage } from '@/features/staff/components/StaffPage'
@@ -11,11 +11,20 @@ import { OrdersPage } from '@/features/orders/components'
 import { NotificationPage } from '@/features/notifications/components'
 import { ProfilePage } from '@/features/profile/components'
 import { ReportsPage } from '@/features/reports/components'
+import { auth } from '@/lib/api'
 
 export function DashboardLayout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+
+  // Check if user is authenticated
+  const isAuthenticated = auth.isAuthenticated()
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" replace />
+  }
 
   // Responsive breakpoint detection
   useEffect(() => {

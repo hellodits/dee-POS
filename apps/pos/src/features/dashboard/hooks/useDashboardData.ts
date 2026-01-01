@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { reportsApi, tablesApi } from '@/lib/api'
-import { StatsData, DishItem, ChartDataPoint } from '../types'
+import { StatsData, DishItem, ChartDataPoint, FilterValue } from '../types'
 
 interface DashboardData {
   stats: StatsData[]
@@ -9,7 +9,9 @@ interface DashboardData {
   chartData: ChartDataPoint[]
   isLoading: boolean
   error: string | null
+  activeFilter: FilterValue
   refetch: () => void
+  setFilter: (filter: FilterValue) => void
 }
 
 interface TopProduct {
@@ -35,17 +37,21 @@ export function useDashboardData(): DashboardData {
   const [popularDishes, setPopularDishes] = useState<DishItem[]>([])
   const [topSellingDishes, setTopSellingDishes] = useState<DishItem[]>([])
   const [chartData, setChartData] = useState<ChartDataPoint[]>([])
+  const [activeFilter, setActiveFilter] = useState<FilterValue>('monthly')
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (period: FilterValue = 'monthly') => {
     try {
       setIsLoading(true)
       setError(null)
 
+      // Map filter to API period
+      const apiPeriod = period === 'daily' ? 'week' : period === 'weekly' ? 'month' : 'month'
+
       // Fetch all data in parallel, handle individual failures gracefully
       const results = await Promise.allSettled([
         reportsApi.getDashboard(),
-        reportsApi.getTopProducts({ period: 'month', limit: 8 }),
-        reportsApi.getDailyTrend({ period: 'month' }),
+        reportsApi.getTopProducts({ period: apiPeriod, limit: 8 }),
+        reportsApi.getDailyTrend({ period: apiPeriod }),
         tablesApi.getSummary(),
       ])
 
@@ -106,9 +112,9 @@ export function useDashboardData(): DashboardData {
       setPopularDishes(firstHalf)
       setTopSellingDishes(secondHalf)
 
-      // Process chart data for monthly overview
-      const monthlyChart = aggregateToMonthly(dailyData)
-      setChartData(monthlyChart)
+      // Process chart data based on filter
+      const processedChartData = processChartData(dailyData, period)
+      setChartData(processedChartData)
 
       // Check if all requests failed
       const allFailed = results.every(r => r.status === 'rejected')
@@ -124,9 +130,18 @@ export function useDashboardData(): DashboardData {
     }
   }, [])
 
-  useEffect(() => {
-    fetchData()
+  const setFilter = useCallback((filter: FilterValue) => {
+    setActiveFilter(filter)
+    fetchData(filter)
   }, [fetchData])
+
+  const refetch = useCallback(() => {
+    fetchData(activeFilter)
+  }, [fetchData, activeFilter])
+
+  useEffect(() => {
+    fetchData(activeFilter)
+  }, [fetchData, activeFilter])
 
   return {
     stats,
@@ -135,7 +150,9 @@ export function useDashboardData(): DashboardData {
     chartData,
     isLoading,
     error,
-    refetch: fetchData
+    activeFilter,
+    refetch,
+    setFilter
   }
 }
 
@@ -192,6 +209,52 @@ function getStockStatus(stock?: number): 'In Stock' | 'Out of Stock' | 'Low Stoc
   if (stock <= 0) return 'Out of Stock'
   if (stock <= 10) return 'Low Stock'
   return 'In Stock'
+}
+
+function processChartData(dailyData: DailySales[], period: FilterValue): ChartDataPoint[] {
+  switch (period) {
+    case 'daily':
+      return aggregateToDaily(dailyData)
+    case 'weekly':
+      return aggregateToWeekly(dailyData)
+    case 'monthly':
+    default:
+      return aggregateToMonthly(dailyData)
+  }
+}
+
+function aggregateToDaily(dailyData: DailySales[]): ChartDataPoint[] {
+  // Show last 7 days
+  const last7Days = dailyData.slice(-7)
+  return last7Days.map(day => ({
+    month: new Date(day.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+    sales: day.orders || 0,
+    revenue: day.total || 0
+  }))
+}
+
+function aggregateToWeekly(dailyData: DailySales[]): ChartDataPoint[] {
+  // Group by weeks (last 8 weeks)
+  const weeklyMap = new Map<string, { sales: number; revenue: number }>()
+  
+  dailyData.forEach(day => {
+    const date = new Date(day.date)
+    const weekStart = new Date(date)
+    weekStart.setDate(date.getDate() - date.getDay()) // Start of week (Sunday)
+    const weekKey = `Week ${Math.ceil(date.getDate() / 7)}`
+    
+    const existing = weeklyMap.get(weekKey) || { sales: 0, revenue: 0 }
+    weeklyMap.set(weekKey, {
+      sales: existing.sales + (day.orders || 0),
+      revenue: existing.revenue + (day.total || 0)
+    })
+  })
+
+  return Array.from(weeklyMap.entries()).slice(-8).map(([week, data]) => ({
+    month: week,
+    sales: data.sales,
+    revenue: data.revenue
+  }))
 }
 
 function aggregateToMonthly(dailyData: DailySales[]): ChartDataPoint[] {

@@ -97,7 +97,7 @@ api.interceptors.response.use(
       
       // Redirect to login (avoid redirect loop)
       if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
+        window.location.href = '/auth/login'
       }
     }
 
@@ -142,7 +142,7 @@ export const auth = {
   logout: () => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
-    window.location.href = '/login'
+    window.location.href = '/auth/login'
   },
 
   getToken: (): string | null => {
