@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ChevronLeft, 
-  ChevronRight, 
+  Menu, 
   Calendar, 
   Clock, 
   Users, 
@@ -189,9 +188,11 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
       <div className="flex-1 bg-background min-h-screen">
         <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
           <div className="flex items-center space-x-3">
-            <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg">
-              {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-            </button>
+            {isMobile && (
+              <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg">
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
             <h1 className="text-xl font-semibold text-foreground">Memuat...</h1>
           </div>
         </div>
@@ -207,9 +208,11 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
       <div className="flex-1 bg-background min-h-screen">
         <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
           <div className="flex items-center space-x-3">
-            <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg">
-              {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-            </button>
+            {isMobile && (
+              <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg">
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
             <h1 className="text-xl font-semibold text-foreground">Reservasi Tidak Ditemukan</h1>
           </div>
         </div>
@@ -232,9 +235,11 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
       {/* Header */}
       <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-center space-x-3">
-          <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg">
-            {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-          </button>
+          {isMobile && (
+            <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg">
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Detail Reservasi</h1>
             <p className="text-sm text-muted-foreground mt-1">Kelola informasi reservasi</p>

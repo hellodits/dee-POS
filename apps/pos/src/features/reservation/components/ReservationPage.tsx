@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Calendar, Grid, List, Loader2, RefreshCw } from 'lucide-react';
+import { Menu, Plus, Calendar, Grid, List, Loader2, RefreshCw } from 'lucide-react';
 import { ReservationGrid } from './ReservationGrid';
 import { ReservationList } from './ReservationList';
 import { ReservationForm } from './ReservationForm';
@@ -105,13 +105,15 @@ export const ReservationPage: React.FC<ReservationPageProps> = ({
       {/* Header */}
       <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-start sm:items-center gap-3">
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target flex-shrink-0"
-            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-          </button>
+          {isMobile && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target flex-shrink-0"
+              title="Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           <div className="flex-1 min-w-0">
             <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground">Reservation Management</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">

@@ -87,21 +87,21 @@ export function MyProfileView() {
   const displayAvatar = avatarPreview || currentUser.avatar;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-semibold text-gray-900">My Profile</h2>
-        <p className="text-gray-600 mt-1">Kelola informasi pribadi dan pengaturan akun</p>
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">My Profile</h2>
+        <p className="text-sm sm:text-base text-gray-600 mt-1">Kelola informasi pribadi dan pengaturan akun</p>
       </div>
 
       {/* Profile Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* Avatar Section */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Foto Profil</h3>
-          <div className="flex items-center space-x-6">
-            <div className="relative">
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Foto Profil</h3>
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:space-x-6">
+            <div className="relative flex-shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-gray-100">
                 {displayAvatar ? (
                   <img 
                     src={displayAvatar} 
@@ -129,8 +129,8 @@ export function MyProfileView() {
                 className="hidden"
               />
             </div>
-            <div>
-              <p className="text-sm text-gray-600 mb-2">Upload foto profil baru</p>
+            <div className="text-center sm:text-left">
+              <p className="text-sm text-gray-600 mb-1 sm:mb-2">Upload foto profil baru</p>
               <p className="text-xs text-gray-500">JPG, PNG atau GIF. Maksimal 2MB.</p>
               {avatarFile && (
                 <p className="text-xs text-green-600 mt-1">✓ {avatarFile.name}</p>
@@ -140,9 +140,9 @@ export function MyProfileView() {
         </div>
 
         {/* Personal Information */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Informasi Pribadi</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Informasi Pribadi</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Nama Depan
@@ -168,8 +168,8 @@ export function MyProfileView() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
               />
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                 Email
               </label>
               <input
@@ -177,12 +177,12 @@ export function MyProfileView() {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
                 required
               />
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                 Alamat
               </label>
               <textarea
@@ -190,7 +190,7 @@ export function MyProfileView() {
                 value={formData.address}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors resize-none"
+                className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors resize-none"
                 placeholder="Masukkan alamat..."
               />
             </div>
@@ -198,10 +198,10 @@ export function MyProfileView() {
         </div>
 
         {/* Password Section */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Ubah Password</h3>
-          <p className="text-sm text-gray-600 mb-4">Kosongkan jika tidak ingin mengubah password</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2 sm:mb-4">Ubah Password</h3>
+          <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Kosongkan jika tidak ingin mengubah password</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password Baru
@@ -265,7 +265,7 @@ export function MyProfileView() {
           <button
             type="submit"
             disabled={isLoading}
-            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="w-full sm:w-auto px-6 py-2.5 sm:py-2 bg-red-600 text-white text-sm sm:text-base rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}

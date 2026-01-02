@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, Upload, X, Loader2, AlertCircle } from 'lucide-react'
+import { Menu, Upload, X, Loader2, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { staffApi } from '@/lib/api'
@@ -191,13 +191,15 @@ export function StaffDetail({ isSidebarCollapsed, isMobile, onToggleSidebar }: S
         <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <button
-                onClick={onToggleSidebar}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-                title={isSidebarCollapsed ? t('common.expand') : t('common.collapse')}
-              >
-                {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-              </button>
+              {isMobile && (
+                <button
+                  onClick={onToggleSidebar}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+                  title={t('common.menu')}
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
               <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
                 {t('staff.staffDetail')}
               </h1>
@@ -227,13 +229,15 @@ export function StaffDetail({ isSidebarCollapsed, isMobile, onToggleSidebar }: S
         <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <button
-                onClick={onToggleSidebar}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-                title={isSidebarCollapsed ? t('common.expand') : t('common.collapse')}
-              >
-                {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-              </button>
+              {isMobile && (
+                <button
+                  onClick={onToggleSidebar}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+                  title={t('common.menu')}
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
               <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
                 {t('staff.staffDetail')}
               </h1>
@@ -266,13 +270,15 @@ export function StaffDetail({ isSidebarCollapsed, isMobile, onToggleSidebar }: S
         <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <button
-                onClick={onToggleSidebar}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-                title={isSidebarCollapsed ? t('common.expand') : t('common.collapse')}
-              >
-                {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-              </button>
+              {isMobile && (
+                <button
+                  onClick={onToggleSidebar}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+                  title={t('common.menu')}
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              )}
               <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
                 {t('staff.staffDetail')}
               </h1>
@@ -304,13 +310,15 @@ export function StaffDetail({ isSidebarCollapsed, isMobile, onToggleSidebar }: S
       <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <button
-              onClick={onToggleSidebar}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-              title={isSidebarCollapsed ? t('common.expand') : t('common.collapse')}
-            >
-              {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-            </button>
+            {isMobile && (
+              <button
+                onClick={onToggleSidebar}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+                title={t('common.menu')}
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
               {staff.fullName}
             </h1>

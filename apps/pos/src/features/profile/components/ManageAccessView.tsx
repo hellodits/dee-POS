@@ -90,12 +90,12 @@ export function ManageAccessView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Kelola Akses</h2>
-          <p className="text-gray-600 mt-1">Kontrol izin dan level akses pengguna</p>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Kelola Akses</h2>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Kontrol izin dan level akses pengguna</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -108,7 +108,7 @@ export function ManageAccessView() {
           </button>
           <button
             onClick={() => setShowAddForm(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white text-sm sm:text-base rounded-lg hover:bg-red-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah User</span>
@@ -130,19 +130,19 @@ export function ManageAccessView() {
 
       {/* Add User Form */}
       {showAddForm && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Tambah User Baru</h3>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900">Tambah User Baru</h3>
             <button
               onClick={() => setShowAddForm(false)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 text-xl"
             >
               ×
             </button>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nama Depan
@@ -243,18 +243,18 @@ export function ManageAccessView() {
               </div>
             </div>
             
-            <div className="flex justify-end space-x-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:space-x-3">
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="w-full sm:w-auto px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors order-2 sm:order-1"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 order-1 sm:order-2"
               >
                 {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isLoading ? 'Menyimpan...' : 'Tambah User'}
@@ -278,53 +278,53 @@ export function ManageAccessView() {
       {/* Users List */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {isLoading && users.length === 0 ? (
-          <div className="p-8 text-center">
+          <div className="p-6 sm:p-8 text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto text-gray-400" />
-            <p className="mt-2 text-gray-500">Memuat data user...</p>
+            <p className="mt-2 text-sm sm:text-base text-gray-500">Memuat data user...</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
             {filteredUsers.map((user) => (
-              <div key={user.id} className="p-6">
+              <div key={user.id} className="p-4 sm:p-6">
                 {/* User Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
                       {user.avatar ? (
                         <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-red-100 text-red-600 font-semibold">
+                        <div className="w-full h-full flex items-center justify-center bg-red-100 text-red-600 font-semibold text-sm sm:text-base">
                           {user.firstName[0]}{user.lastName?.[0] || ''}
                         </div>
                       )}
                     </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-gray-900 text-sm sm:text-base truncate">
                         {user.firstName} {user.lastName}
                       </h3>
-                      <p className="text-sm text-gray-600">{user.email}</p>
-                      <div className="flex items-center space-x-3 mt-1">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getRoleBadgeColor(user.role)}`}>
+                      <p className="text-xs sm:text-sm text-gray-600 truncate">{user.email}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getRoleBadgeColor(user.role)}`}>
                           {getRoleLabel(user.role)}
                         </span>
                         {user.lastLogin && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 hidden sm:inline">
                             Login terakhir: {formatLastLogin(user.lastLogin)}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-end space-x-2 flex-shrink-0">
                     <button
                       onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
-                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="px-3 py-1.5 text-xs sm:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                       {expandedUser === user.id ? 'Tutup' : 'Permissions'}
                     </button>
                     <button
                       onClick={() => handleDeleteUser(user.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-1.5 sm:p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -334,22 +334,22 @@ export function ManageAccessView() {
                 {/* Permissions Panel */}
                 {expandedUser === user.id && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">Permissions</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-3">Permissions</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                       {Object.entries(user.permissions).map(([permission, enabled]) => (
-                        <div key={permission} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <span className="text-sm text-gray-700">
+                        <div key={permission} className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 rounded-lg">
+                          <span className="text-xs sm:text-sm text-gray-700">
                             {getPermissionLabel(permission)}
                           </span>
                           <button
                             onClick={() => handlePermissionToggle(user.id, permission as keyof UserPermission)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            className={`relative inline-flex h-5 w-9 sm:h-6 sm:w-11 items-center rounded-full transition-colors flex-shrink-0 ${
                               enabled ? 'bg-red-600' : 'bg-gray-300'
                             }`}
                           >
                             <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                enabled ? 'translate-x-6' : 'translate-x-1'
+                              className={`inline-block h-3.5 w-3.5 sm:h-4 sm:w-4 transform rounded-full bg-white transition-transform ${
+                                enabled ? 'translate-x-4 sm:translate-x-6' : 'translate-x-1'
                               }`}
                             />
                           </button>
@@ -365,8 +365,8 @@ export function ManageAccessView() {
       </div>
 
       {!isLoading && filteredUsers.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">
+        <div className="text-center py-8 sm:py-12">
+          <p className="text-sm sm:text-base text-gray-500">
             {searchTerm ? 'Tidak ada user yang cocok dengan pencarian.' : 'Belum ada user.'}
           </p>
         </div>

@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight, CheckCheck, RefreshCw } from 'lucide-react';
+import { Menu, CheckCheck, RefreshCw, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { NotificationList } from './NotificationList';
 import { useNotifications } from '../hooks/useNotifications';
 import { NotificationFilter } from '../types';
@@ -14,6 +15,7 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({
   isMobile = false,
   onToggleSidebar = () => {},
 }) => {
+  const navigate = useNavigate();
   const {
     notifications,
     filter,
@@ -43,13 +45,15 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4">
         <div className="flex items-center space-x-3">
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-          </button>
+          {isMobile && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title="Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Notifications</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -80,6 +84,15 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({
                 {!isMobile && 'Mark all as read'}
               </button>
             )}
+            
+            {/* Close Button */}
+            <button
+              onClick={() => navigate('/')}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title="Back to Dashboard"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>

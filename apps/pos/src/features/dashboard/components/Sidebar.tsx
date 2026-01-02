@@ -9,7 +9,9 @@ import {
   Calendar,
   ShoppingCart,
   LogOut,
-  X
+  X,
+  PanelLeftClose,
+  PanelLeft
 } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ui/theme-switcher'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
@@ -20,13 +22,15 @@ interface SidebarProps {
   isMobileMenuOpen: boolean
   isMobile: boolean
   onCloseMobileMenu: () => void
+  onToggleSidebar: () => void
 }
 
 export function Sidebar({ 
   isCollapsed, 
   isMobileMenuOpen, 
   isMobile, 
-  onCloseMobileMenu
+  onCloseMobileMenu,
+  onToggleSidebar
 }: SidebarProps) {
   const { t } = useTranslation()
   const location = useLocation()
@@ -153,13 +157,26 @@ export function Sidebar({
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200/50">
         {isCollapsed ? (
-          <div className="flex justify-center">
-            <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center">
+          <div 
+            className="flex justify-center cursor-pointer"
+            onClick={onToggleSidebar}
+            title="Expand sidebar"
+          >
+            <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center hover:bg-red-700 transition-colors">
               <span className="text-white font-bold text-sm">D</span>
             </div>
           </div>
         ) : (
-          <h2 className="text-xl font-bold text-gray-900">DEEPOS</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900">DEEPOS</h2>
+            <button
+              onClick={onToggleSidebar}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose className="w-5 h-5" />
+            </button>
+          </div>
         )}
       </div>
       

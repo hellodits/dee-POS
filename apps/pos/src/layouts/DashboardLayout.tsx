@@ -66,6 +66,7 @@ export function DashboardLayout() {
         isMobileMenuOpen={isMobileMenuOpen}
         isMobile={isMobile}
         onCloseMobileMenu={closeMobileMenu}
+        onToggleSidebar={toggleSidebar}
       />
       
       {/* Main Content */}

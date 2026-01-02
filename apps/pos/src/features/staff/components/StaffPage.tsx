@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
+import { Menu, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -136,9 +136,11 @@ export function StaffPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: Sta
       <div className="flex-1 bg-background min-h-screen flex flex-col">
         <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
           <div className="flex items-center space-x-3">
-            <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target">
-              {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-            </button>
+            {isMobile && (
+              <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target">
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">{t('staff.title')}</h1>
           </div>
         </div>
@@ -158,9 +160,11 @@ export function StaffPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: Sta
       <div className="flex-1 bg-background min-h-screen flex flex-col">
         <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
           <div className="flex items-center space-x-3">
-            <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target">
-              {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-            </button>
+            {isMobile && (
+              <button onClick={onToggleSidebar} className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target">
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">{t('staff.title')}</h1>
           </div>
         </div>
@@ -186,13 +190,15 @@ export function StaffPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: Sta
       {/* Header */}
       <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-center space-x-3">
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-            title={isSidebarCollapsed ? t('common.expand') : t('common.collapse')}
-          >
-            {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-          </button>
+          {isMobile && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+              title={t('common.menu')}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           <h1 className="text-xl sm:text-2xl font-semibold text-foreground">
             {t('staff.title')}
           </h1>

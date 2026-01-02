@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Search, RefreshCw, X, AlertTriangle, Calendar, BarChart3 } from 'lucide-react';
+import { Menu, Plus, Search, RefreshCw, X, AlertTriangle, Calendar, BarChart3 } from 'lucide-react';
 import { useOrderStore } from '../hooks/useOrderStore';
 import { OrderCard } from './OrderCard';
 import { PaymentModal } from './PaymentModal';
@@ -301,13 +301,15 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
       {/* Header */}
       <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-center space-x-3">
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-          </button>
+          {isMobile && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+              title="Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Orders</h1>
             <p className="text-sm text-muted-foreground mt-1">

@@ -1,4 +1,4 @@
-import { Bell, User, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
+import { Bell, User, Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
@@ -23,32 +23,20 @@ export function Header({ title, isSidebarCollapsed, isMobile, onToggleSidebar }:
     navigate('/profile')
   }
 
-  const getToggleIcon = () => {
-    if (isMobile) {
-      return <Menu className="w-5 h-5" />
-    }
-    return isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />
-  }
-
-  const getToggleTooltip = () => {
-    if (isMobile) {
-      return t('common.menu')
-    }
-    return isSidebarCollapsed ? t('common.expand') : t('common.collapse')
-  }
-
   return (
     <header className="bg-card border-b border-border px-4 sm:px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          {/* Sidebar Toggle Button / Hamburger Menu */}
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-            title={getToggleTooltip()}
-          >
-            {getToggleIcon()}
-          </button>
+          {/* Mobile Hamburger Menu */}
+          {isMobile && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+              title={t('common.menu')}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           
           {/* Page Title */}
           <h1 className="text-xl sm:text-2xl font-semibold text-foreground truncate">

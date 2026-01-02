@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Menu, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { CategoryRail } from './CategoryRail';
 import { MenuTable } from './MenuTable';
 import { CategoryDrawer } from './CategoryDrawer';
@@ -121,13 +121,15 @@ export const MenuPage: React.FC<MenuPageProps> = ({
       {/* Header */}
       <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-center space-x-3">
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-          </button>
+          {isMobile && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+              title="Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Manajemen Menu</h1>
             <p className="text-sm text-muted-foreground mt-1">

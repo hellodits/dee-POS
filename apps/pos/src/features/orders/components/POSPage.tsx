@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Minus, ShoppingCart, Edit2, Loader2, X } from 'lucide-react';
+import { Menu, Plus, Minus, ShoppingCart, Edit2, Loader2, X } from 'lucide-react';
 import { useOrderStore } from '../hooks/useOrderStore';
 import { MenuItem, Table } from '../types';
 import { productsApi, tablesApi } from '@/lib/api';
@@ -196,14 +196,16 @@ export const POSPage: React.FC<POSPageProps> = ({
       {/* Header - Fixed */}
       <div className="flex-shrink-0 bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-center space-x-3">
-          {/* Sidebar Toggle - Left side */}
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isMobile ? '☰' : (isSidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />)}
-          </button>
+          {/* Mobile Hamburger Menu */}
+          {isMobile && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
+              title="Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           
           {/* Title - Center */}
           <div className="flex-1">

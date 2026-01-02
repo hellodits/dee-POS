@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { User, CurrentUser, ProfileFormData, NewUserFormData, ProfileView } from '../types';
 import { defaultPermissions } from '../data/profileData';
 import { auth, usersApi } from '@/lib/api';
@@ -8,6 +8,7 @@ export function useProfile() {
   const [currentUserData, setCurrentUserData] = useState<CurrentUser | null>(null);
   const [activeView, setActiveView] = useState<ProfileView>('profile');
   const [isLoading, setIsLoading] = useState(true);
+  const hasFetched = useRef(false);
 
   // Map API user to local User type
   const mapApiUserToLocal = (apiUser: any): User => ({
@@ -44,10 +45,39 @@ export function useProfile() {
 
   // Load current user and users list on mount
   useEffect(() => {
+    // Prevent multiple fetches in Strict Mode
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Fetch current user
+        // First try to get user from localStorage to avoid unnecessary API call
+        const storedUser = auth.getUser();
+        
+        if (storedUser) {
+          setCurrentUserData({
+            id: storedUser.id,
+            firstName: storedUser.firstName || storedUser.username?.split('_')[0] || 'User',
+            lastName: storedUser.lastName || '',
+            email: storedUser.email,
+            role: storedUser.role,
+            avatar: storedUser.avatar,
+            address: storedUser.address || '',
+            permissions: {
+              dashboard: true,
+              reports: storedUser.permissions?.can_see_report ?? false,
+              inventory: storedUser.permissions?.can_manage_inventory ?? false,
+              orders: true,
+              customers: true,
+              settings: storedUser.role === 'admin',
+            },
+            createdAt: storedUser.createdAt || new Date().toISOString(),
+            lastLogin: storedUser.lastLogin || new Date().toISOString(),
+          });
+        }
+
+        // Fetch fresh data from API (but don't block UI)
         const userData = await auth.getMe();
         
         if (userData) {
@@ -76,35 +106,12 @@ export function useProfile() {
         await fetchUsers();
       } catch (error) {
         console.error('Failed to load data:', error);
-        // Fallback to localStorage for current user
-        const storedUser = auth.getUser();
-        if (storedUser) {
-          setCurrentUserData({
-            id: storedUser.id,
-            firstName: storedUser.firstName || storedUser.username?.split('_')[0] || 'User',
-            lastName: storedUser.lastName || '',
-            email: storedUser.email,
-            role: storedUser.role,
-            avatar: storedUser.avatar,
-            address: storedUser.address || '',
-            permissions: {
-              dashboard: true,
-              reports: storedUser.permissions?.can_see_report ?? false,
-              inventory: storedUser.permissions?.can_manage_inventory ?? false,
-              orders: true,
-              customers: true,
-              settings: storedUser.role === 'admin',
-            },
-            createdAt: new Date().toISOString(),
-            lastLogin: storedUser.lastLogin || new Date().toISOString(),
-          });
-        }
       }
       setIsLoading(false);
     };
 
     loadData();
-  }, [fetchUsers]);
+  }, []); // Remove fetchUsers from dependencies
 
   // Profile management - uses real API
   const updateProfile = async (data: ProfileFormData, avatarFile?: File) => {
