@@ -69,7 +69,6 @@ Kami tunggu kedatangan Anda. Terima kasih! 🙏`;
 };
 
 export const ReservationDetail: React.FC<ReservationDetailProps> = ({
-  isSidebarCollapsed = false,
   isMobile = false,
   onToggleSidebar = () => {},
 }) => {

@@ -36,7 +36,6 @@ interface POSPageProps {
 }
 
 export const POSPage: React.FC<POSPageProps> = ({
-  isSidebarCollapsed = false,
   isMobile = false,
   onToggleSidebar = () => {},
   onBackToDashboard = () => {},

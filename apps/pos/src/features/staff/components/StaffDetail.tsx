@@ -13,7 +13,7 @@ interface StaffDetailProps {
   onToggleSidebar: () => void
 }
 
-export function StaffDetail({ isSidebarCollapsed, isMobile, onToggleSidebar }: StaffDetailProps) {
+export function StaffDetail({ isMobile, onToggleSidebar }: StaffDetailProps) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()

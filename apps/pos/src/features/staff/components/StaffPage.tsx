@@ -17,7 +17,7 @@ interface StaffPageProps {
   onToggleSidebar: () => void
 }
 
-export function StaffPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: StaffPageProps) {
+export function StaffPage({ isMobile, onToggleSidebar }: StaffPageProps) {
   const { t } = useTranslation()
   const location = useLocation()
   const { 

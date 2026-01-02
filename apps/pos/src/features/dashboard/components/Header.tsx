@@ -10,7 +10,7 @@ interface HeaderProps {
   onToggleSidebar: () => void
 }
 
-export function Header({ title, isSidebarCollapsed, isMobile, onToggleSidebar }: HeaderProps) {
+export function Header({ title, isMobile, onToggleSidebar }: HeaderProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { stats } = useNotifications()

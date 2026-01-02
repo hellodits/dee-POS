@@ -14,7 +14,6 @@ interface MenuPageProps {
 }
 
 export const MenuPage: React.FC<MenuPageProps> = ({
-  isSidebarCollapsed = false,
   isMobile = false,
   onToggleSidebar = () => {},
 }) => {

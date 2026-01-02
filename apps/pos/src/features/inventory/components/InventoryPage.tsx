@@ -14,7 +14,6 @@ interface InventoryPageProps {
 }
 
 export const InventoryPage: React.FC<InventoryPageProps> = ({
-  isSidebarCollapsed = false,
   isMobile = false,
   onToggleSidebar = () => {},
 }) => {

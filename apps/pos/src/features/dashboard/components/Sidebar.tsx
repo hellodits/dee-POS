@@ -10,8 +10,7 @@ import {
   ShoppingCart,
   LogOut,
   X,
-  PanelLeftClose,
-  PanelLeft
+  PanelLeftClose
 } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ui/theme-switcher'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'

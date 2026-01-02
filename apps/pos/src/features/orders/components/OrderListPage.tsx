@@ -165,7 +165,6 @@ interface OrderListPageProps {
 }
 
 export const OrderListPage: React.FC<OrderListPageProps> = ({
-  isSidebarCollapsed = false,
   isMobile = false,
   onToggleSidebar = () => {},
   onAddNewOrder = () => {},

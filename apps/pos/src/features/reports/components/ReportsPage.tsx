@@ -11,7 +11,7 @@ interface ReportsPageProps {
   onToggleSidebar: () => void;
 }
 
-export function ReportsPage({ isSidebarCollapsed, isMobile, onToggleSidebar }: ReportsPageProps) {
+export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
   const {
     activeTab,
     dateRange,

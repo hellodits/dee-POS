@@ -11,7 +11,6 @@ interface NotificationPageProps {
 }
 
 export const NotificationPage: React.FC<NotificationPageProps> = ({
-  isSidebarCollapsed = false,
   isMobile = false,
   onToggleSidebar = () => {},
 }) => {

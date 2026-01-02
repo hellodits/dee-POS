@@ -13,7 +13,6 @@ interface ReservationPageProps {
 }
 
 export const ReservationPage: React.FC<ReservationPageProps> = ({
-  isSidebarCollapsed = false,
   isMobile = false,
   onToggleSidebar = () => {},
 }) => {
