@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Loader2, Trash2, Calendar, Clock, LogIn, LogOut, Edit2, UserCheck, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,6 +37,7 @@ interface StaffWorkSummary {
 interface AttendanceListProps { isMobile: boolean }
 
 export function AttendanceList({ }: AttendanceListProps) {
+  const { t } = useTranslation()
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
   const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([])
   const [staff, setStaff] = useState<Staff[]>([])
@@ -182,7 +184,7 @@ export function AttendanceList({ }: AttendanceListProps) {
       }
     } catch (err: any) { 
       console.error('❌ Clock-in error:', err.response?.data || err.message)
-      alert(err.response?.data?.error || 'Gagal absen masuk') 
+      alert(err.response?.data?.error || t('staff.failedToClockIn')) 
     }
     finally { setClockingStaffId(null) }
   }
@@ -203,7 +205,7 @@ export function AttendanceList({ }: AttendanceListProps) {
       }
     } catch (err: any) { 
       console.error('❌ Clock-out error:', err.response?.data || err.message)
-      alert(err.response?.data?.error || 'Gagal absen keluar') 
+      alert(err.response?.data?.error || t('staff.failedToClockOut')) 
     }
     finally { setClockingStaffId(null) }
   }
@@ -213,7 +215,7 @@ export function AttendanceList({ }: AttendanceListProps) {
     try {
       await staffApi.deleteAttendance(recordId)
       setAttendance(prev => prev.filter(a => a.id !== recordId))
-    } catch (err: any) { alert(err.response?.data?.error || 'Gagal menghapus absensi') }
+    } catch (err: any) { alert(err.response?.data?.error || t('staff.failedToDeleteAttendance')) }
   }
 
   const handleSubmit = async () => {
@@ -227,7 +229,7 @@ export function AttendanceList({ }: AttendanceListProps) {
       setIsAddModalOpen(false)
       setEditingRecord(null)
       fetchAttendance(selectedDate)
-    } catch (err: any) { alert(err.response?.data?.error || 'Gagal menyimpan absensi') }
+    } catch (err: any) { alert(err.response?.data?.error || t('staff.failedToSaveAttendance')) }
     finally { setIsSubmitting(false) }
   }
 
@@ -241,8 +243,8 @@ export function AttendanceList({ }: AttendanceListProps) {
   })
 
   const getStatusColor = (status: AttendanceStatus) => {
-    const colors: Record<string, string> = { 'Present': 'bg-green-100 text-green-800', 'Absent': 'bg-red-100 text-red-800', 'Half Shift': 'bg-blue-100 text-blue-800', 'Leave': 'bg-yellow-100 text-yellow-800' }
-    return colors[status] || 'bg-gray-100 text-gray-800'
+    const colors: Record<string, string> = { 'Present': 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300', 'Absent': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300', 'Half Shift': 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300', 'Leave': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' }
+    return colors[status] || 'bg-muted text-muted-foreground'
   }
 
   const formatHours = (h: number) => h.toFixed(1) + ' jam'
@@ -380,7 +382,7 @@ export function AttendanceList({ }: AttendanceListProps) {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Keluar:</span>
-                        <span className="font-medium text-red-600">{att.checkOut || '-'}</span>
+                        <span className="font-medium text-destructive">{att.checkOut || '-'}</span>
                       </div>
                       {hasCheckedIn && hasCheckedOut && (
                         <div className="flex justify-between text-sm border-t pt-2">
@@ -389,19 +391,19 @@ export function AttendanceList({ }: AttendanceListProps) {
                         </div>
                       )}
                       {hasCheckedIn && !hasCheckedOut && (
-                        <Button onClick={() => handleClockOut(s.id)} className="w-full bg-red-500 hover:bg-red-600" disabled={isClocking}>
+                        <Button onClick={() => handleClockOut(s.id)} className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground" disabled={isClocking}>
                           {isClocking ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogOut className="w-4 h-4 mr-2" />}
                           Absen Keluar
                         </Button>
                       )}
                       {hasCheckedIn && hasCheckedOut && (
-                        <div className="text-center py-2 bg-green-50 rounded-md">
-                          <span className="text-green-600 text-sm font-medium">Selesai</span>
+                        <div className="text-center py-2 bg-green-50 dark:bg-green-900/20 rounded-md">
+                          <span className="text-green-600 dark:text-green-400 text-sm font-medium">Selesai</span>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <Button onClick={() => handleClockIn(s.id)} className="w-full bg-green-500 hover:bg-green-600" disabled={isClocking}>
+                    <Button onClick={() => handleClockIn(s.id)} className="w-full bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700" disabled={isClocking}>
                       {isClocking ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogIn className="w-4 h-4 mr-2" />}
                       Absen Masuk
                     </Button>
@@ -429,10 +431,10 @@ export function AttendanceList({ }: AttendanceListProps) {
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-green-700">{statusCounts.present}</p><p className="text-sm text-green-600">Hadir</p></div>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-red-700">{statusCounts.absent}</p><p className="text-sm text-red-600">Tidak Hadir</p></div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-blue-700">{statusCounts.halfShift}</p><p className="text-sm text-blue-600">Setengah Hari</p></div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-yellow-700">{statusCounts.leave}</p><p className="text-sm text-yellow-600">Cuti</p></div>
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-green-700 dark:text-green-400">{statusCounts.present}</p><p className="text-sm text-green-600 dark:text-green-500">Hadir</p></div>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-red-700 dark:text-red-400">{statusCounts.absent}</p><p className="text-sm text-red-600 dark:text-red-500">Tidak Hadir</p></div>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{statusCounts.halfShift}</p><p className="text-sm text-blue-600 dark:text-blue-500">Setengah Hari</p></div>
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-center"><p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{statusCounts.leave}</p><p className="text-sm text-yellow-600 dark:text-yellow-500">Cuti</p></div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -473,10 +475,10 @@ export function AttendanceList({ }: AttendanceListProps) {
                 {getWorkSummary().map(summary => (
                   <tr key={summary.staffId} className="border-b hover:bg-accent/50">
                     <td className="py-4 px-4"><div className="flex items-center space-x-3"><div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">{summary.staffImage ? <img src={summary.staffImage} className="w-full h-full object-cover" alt="" /> : <span>{summary.staffName?.charAt(0)}</span>}</div><div><p className="font-medium">{summary.staffName}</p><p className="text-sm text-muted-foreground">{summary.staffRole}</p></div></div></td>
-                    <td className="py-4 px-4 text-center"><span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">{summary.presentDays}</span></td>
-                    <td className="py-4 px-4 text-center"><span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">{summary.absentDays}</span></td>
-                    <td className="py-4 px-4 text-center"><span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">{summary.halfShiftDays}</span></td>
-                    <td className="py-4 px-4 text-center"><span className="px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">{summary.leaveDays}</span></td>
+                    <td className="py-4 px-4 text-center"><span className="px-2 py-1 rounded-full text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">{summary.presentDays}</span></td>
+                    <td className="py-4 px-4 text-center"><span className="px-2 py-1 rounded-full text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">{summary.absentDays}</span></td>
+                    <td className="py-4 px-4 text-center"><span className="px-2 py-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">{summary.halfShiftDays}</span></td>
+                    <td className="py-4 px-4 text-center"><span className="px-2 py-1 rounded-full text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300">{summary.leaveDays}</span></td>
                     <td className="py-4 px-4 text-right font-semibold text-primary">{formatHours(summary.totalHours)}</td>
                   </tr>
                 ))}

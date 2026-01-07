@@ -16,12 +16,12 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({
   onAddCategory,
 }) => {
   return (
-    <div className="bg-white border-b border-gray-200 p-4">
+    <div className="bg-card border-b border-border p-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Kategori</h2>
+        <h2 className="text-lg font-semibold text-foreground">Kategori</h2>
         <button
           onClick={onAddCategory}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Tambah Kategori</span>
@@ -38,8 +38,8 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({
               flex-shrink-0 min-w-[140px] p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
               ${
                 selectedCategory === category.id
-                  ? 'bg-red-50 border-red-600 shadow-md'
-                  : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                  ? 'bg-primary/10 dark:bg-primary/20 border-primary shadow-md'
+                  : 'bg-card border-border hover:border-muted-foreground/30 hover:shadow-sm'
               }
             `}
           >
@@ -47,13 +47,13 @@ export const CategoryRail: React.FC<CategoryRailProps> = ({
               <div className="text-2xl mb-2">{category.icon}</div>
               <h3 className={`
                 font-medium text-sm mb-1 truncate
-                ${selectedCategory === category.id ? 'text-red-700' : 'text-gray-900'}
+                ${selectedCategory === category.id ? 'text-primary' : 'text-foreground'}
               `}>
                 {category.name}
               </h3>
               <p className={`
                 text-xs
-                ${selectedCategory === category.id ? 'text-red-600' : 'text-gray-500'}
+                ${selectedCategory === category.id ? 'text-primary/80' : 'text-muted-foreground'}
               `}>
                 {category.itemCount} item
               </p>

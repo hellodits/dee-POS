@@ -57,7 +57,7 @@ export function StaffDetail({ isMobile, onToggleSidebar }: StaffDetailProps) {
         }
       } catch (err: any) {
         console.error('Error fetching staff:', err)
-        setError(err.response?.data?.error || 'Gagal memuat data staff')
+        setError(err.response?.data?.error || t('staff.failedToLoad'))
       } finally {
         setLoading(false)
       }
@@ -100,7 +100,7 @@ export function StaffDetail({ isMobile, onToggleSidebar }: StaffDetailProps) {
         alert(t('staff.staffDeletedSuccessfully'))
         navigate('/staff')
       } catch (err: any) {
-        alert(err.response?.data?.error || 'Gagal menghapus staff')
+        alert(err.response?.data?.error || t('staff.failedToDelete'))
       }
     }
   }
@@ -171,7 +171,7 @@ export function StaffDetail({ isMobile, onToggleSidebar }: StaffDetailProps) {
           }
         } catch (err: any) {
           console.error('❌ Photo upload error:', err)
-          const errorMessage = err.response?.data?.error || err.message || 'Gagal mengupload foto'
+          const errorMessage = err.response?.data?.error || err.message || t('staff.failedToUploadPhoto')
           alert(errorMessage)
         } finally {
           setIsUploading(false)
@@ -371,7 +371,7 @@ export function StaffDetail({ isMobile, onToggleSidebar }: StaffDetailProps) {
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
                             onClick={handleChangePhoto}
-                            className="p-2 bg-white rounded-full text-gray-800 hover:bg-gray-100 transition-colors"
+                            className="p-2 bg-background rounded-full text-foreground hover:bg-accent transition-colors"
                             title={t('staff.changePhoto')}
                             disabled={isUploading}
                           >

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Menu, CheckCheck, RefreshCw, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NotificationList } from './NotificationList';
@@ -14,6 +15,7 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({
   isMobile = false,
   onToggleSidebar = () => {},
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     notifications,
@@ -29,14 +31,23 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({
 
   // Filter tabs configuration
   const filterTabs: { id: NotificationFilter; label: string; count: number }[] = [
-    { id: 'all', label: 'All', count: stats.total },
-    { id: 'unread', label: 'Unread', count: stats.unread },
+    { id: 'all', label: t('common.all'), count: stats.total },
+    { id: 'unread', label: t('common.unread'), count: stats.unread },
   ];
 
   const handleMarkAllAsRead = () => {
     if (stats.unread > 0) {
       markAllAsRead();
     }
+  };
+
+  const getUnreadMessage = () => {
+    if (stats.unread === 0) {
+      return t('common.youreAllCaughtUp');
+    }
+    return stats.unread > 1 
+      ? t('common.unreadNotificationsPlural', { count: stats.unread })
+      : t('common.unreadNotifications', { count: stats.unread });
   };
 
   return (
@@ -48,18 +59,15 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({
             <button
               onClick={onToggleSidebar}
               className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title="Menu"
+              title={t('common.menu')}
             >
               <Menu className="w-5 h-5" />
             </button>
           )}
           <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Notifications</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">{t('notifications.title')}</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {stats.unread > 0 
-                ? `You have ${stats.unread} unread notification${stats.unread > 1 ? 's' : ''}`
-                : 'You\'re all caught up!'
-              }
+              {getUnreadMessage()}
             </p>
           </div>
           
@@ -69,7 +77,7 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({
               onClick={refresh}
               disabled={isLoading}
               className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title="Refresh"
+              title={t('common.refresh')}
             >
               <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -80,7 +88,7 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({
                 className="flex items-center gap-2 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium"
               >
                 <CheckCheck className="w-4 h-4" />
-                {!isMobile && 'Mark all as read'}
+                {!isMobile && t('common.markAllAsRead')}
               </button>
             )}
             
@@ -88,7 +96,7 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({
             <button
               onClick={() => navigate('/')}
               className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title="Back to Dashboard"
+              title={t('common.backToDashboard')}
             >
               <X className="w-5 h-5" />
             </button>

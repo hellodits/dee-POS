@@ -29,18 +29,18 @@ export const InventoryItem: React.FC<InventoryItemProps> = ({
     const baseClasses = 'inline-flex px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap';
     if (stockStatus === 'outofstock' || quantity === 0) {
       return {
-        className: `${baseClasses} bg-red-100 text-red-700`,
+        className: `${baseClasses} bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300`,
         label: 'Habis'
       };
     }
     if (stockStatus === 'lowstock' || quantity < 10) {
       return {
-        className: `${baseClasses} bg-amber-100 text-amber-700`,
+        className: `${baseClasses} bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300`,
         label: 'Stok Rendah'
       };
     }
     return {
-      className: `${baseClasses} bg-green-100 text-green-700`,
+      className: `${baseClasses} bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300`,
       label: 'Tersedia'
     };
   };
@@ -71,8 +71,8 @@ export const InventoryItem: React.FC<InventoryItemProps> = ({
         {/* Middle Row: Info Tags */}
         <div className="flex flex-wrap items-center gap-2">
           <div className={`flex items-center space-x-1 px-2 py-1 rounded-md text-xs font-medium ${
-            item.quantity === 0 ? 'bg-red-50 text-red-600' : 
-            item.quantity < 10 ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'
+            item.quantity === 0 ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 
+            item.quantity < 10 ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
           }`}>
             <Package className="w-3 h-3" />
             <span>{item.quantity} {item.unit || 'unit'}</span>
@@ -133,8 +133,8 @@ export const InventoryItem: React.FC<InventoryItemProps> = ({
               <h3 className="font-medium text-foreground truncate">{item.name}</h3>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                 <div className={`flex items-center space-x-1 font-medium ${
-                  item.quantity === 0 ? 'text-red-600' : 
-                  item.quantity < 10 ? 'text-amber-600' : 'text-green-600'
+                  item.quantity === 0 ? 'text-red-600 dark:text-red-400' : 
+                  item.quantity < 10 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'
                 }`}>
                   <Package className="w-3.5 h-3.5" />
                   <span>{item.quantity} {item.unit || 'unit'}</span>

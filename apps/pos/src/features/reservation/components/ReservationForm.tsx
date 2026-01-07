@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronRight, Calendar, Clock, Users, MessageSquare } from 'lucide-react';
 import { Reservation, ReservationFormData, LegacyTable } from '../types';
 
@@ -20,6 +21,8 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
   editingReservation,
   selectedDate,
 }) => {
+  const { t } = useTranslation();
+  
   const [formData, setFormData] = useState<ReservationFormData>({
     guest_name: '',
     whatsapp: '',
@@ -70,7 +73,7 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
       await onSave(formData);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan reservasi');
+      setError(err.message || t('reservation.failedToSave'));
     } finally {
       setIsSubmitting(false);
     }
@@ -103,8 +106,8 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
       <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out rounded-l-2xl overflow-hidden">
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <div className="flex items-center justify-between p-6 border-b border-border bg-card">
+            <h2 className="text-lg font-semibold text-foreground">
               {editingReservation ? 'Edit Reservasi' : 'Buat Reservasi Baru'}
             </h2>
             <button
@@ -227,7 +230,7 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
                       required
                       value={formData.time}
                       onChange={(e) => handleInputChange('time', e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 appearance-none bg-white"
+                      className="w-full pl-10 pr-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring appearance-none bg-background"
                     >
                       {timeOptions.map(time => (
                         <option key={time} value={time}>{time}</option>

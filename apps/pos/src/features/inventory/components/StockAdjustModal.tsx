@@ -83,45 +83,45 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
       
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Sesuaikan Stok</h2>
+          <div className="flex items-center justify-between p-6 border-b border-border">
+            <h2 className="text-lg font-semibold text-foreground">Sesuaikan Stok</h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
 
           {/* Content */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Item Info */}
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-16 h-16 rounded-lg object-cover bg-gray-200"
+                className="w-16 h-16 rounded-lg object-cover bg-muted"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMiA0OEM0MS45NDExIDQ4IDUwIDM5Ljk0MTEgNTAgMzJDNTAgMjQuMDU4OSA0MS45NDExIDE2IDMyIDE2QzIyLjA1ODkgMTYgMTQgMjQuMDU4OSAxNCAzMkMxNCAzOS45NDExIDIyLjA1ODkgNDggMzIgNDhaIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=';
                 }}
               />
               <div className="flex-1">
-                <h3 className="font-medium text-gray-900">{item.name}</h3>
-                <p className="text-sm text-gray-500">{item.category}</p>
-                <p className="text-sm font-medium text-gray-700">{formatPrice(item.price)}</p>
+                <h3 className="font-medium text-foreground">{item.name}</h3>
+                <p className="text-sm text-muted-foreground">{item.category}</p>
+                <p className="text-sm font-medium text-foreground">{formatPrice(item.price)}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Stok Saat Ini</p>
-                <p className="text-2xl font-bold text-gray-900">{item.quantity} {item.unit || 'unit'}</p>
+                <p className="text-sm text-muted-foreground">Stok Saat Ini</p>
+                <p className="text-2xl font-bold text-foreground">{item.quantity} {item.unit || 'unit'}</p>
               </div>
             </div>
 
             {/* Adjust Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Tipe Penyesuaian
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -130,8 +130,8 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
                   onClick={() => setAdjustType('add')}
                   className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
                     adjustType === 'add'
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                      : 'border-border hover:border-muted-foreground'
                   }`}
                 >
                   <Plus className="w-5 h-5" />
@@ -142,8 +142,8 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
                   onClick={() => setAdjustType('subtract')}
                   className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-colors ${
                     adjustType === 'subtract'
-                      ? 'border-red-500 bg-red-50 text-red-700'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                      : 'border-border hover:border-muted-foreground'
                   }`}
                 >
                   <Minus className="w-5 h-5" />
@@ -154,7 +154,7 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
 
             {/* Quantity */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Jumlah *
               </label>
               <input
@@ -163,19 +163,19 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
                 value={quantity || ''}
                 onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
                 placeholder="Masukkan jumlah"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-lg"
+                className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary text-lg"
               />
             </div>
 
             {/* Reason */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Alasan *
               </label>
               <select
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary"
               >
                 {STOCK_REASONS.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -187,7 +187,7 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Catatan (Opsional)
               </label>
               <textarea
@@ -195,14 +195,14 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Tambahkan catatan..."
                 rows={2}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary resize-none"
               />
             </div>
 
             {/* Cost per Unit (for stock in) */}
             {adjustType === 'add' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Harga per {item.unit || 'unit'} (IDR)
                 </label>
                 <input
@@ -212,20 +212,20 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
                   value={costPerUnit || ''}
                   onChange={(e) => setCostPerUnit(parseInt(e.target.value) || 0)}
                   placeholder="Masukkan harga per unit"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-lg"
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary text-lg"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Kosongkan jika menggunakan harga lama: {formatPrice(item.price)}
                 </p>
               </div>
             )}
 
             {/* Preview */}
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-muted rounded-lg">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Stok Baru:</span>
+                <span className="text-sm text-muted-foreground">Stok Baru:</span>
                 <span className={`text-xl font-bold ${
-                  newStock === 0 ? 'text-red-600' : newStock < 10 ? 'text-amber-600' : 'text-green-600'
+                  newStock === 0 ? 'text-red-600 dark:text-red-400' : newStock < 10 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'
                 }`}>
                   {newStock}
                 </span>
@@ -238,14 +238,14 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={isSaving}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-3 border border-border text-foreground rounded-lg hover:bg-accent transition-colors disabled:opacity-50"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={quantity <= 0 || isSaving}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                 Simpan

@@ -147,7 +147,7 @@ export function StaffPage({ isMobile, onToggleSidebar }: StaffPageProps) {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Memuat data staff...</p>
+            <p className="text-muted-foreground">{t('staff.loadingData')}</p>
           </div>
         </div>
       </div>
@@ -177,7 +177,7 @@ export function StaffPage({ isMobile, onToggleSidebar }: StaffPageProps) {
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
-              Coba Lagi
+              {t('common.tryAgain')}
             </button>
           </div>
         </div>

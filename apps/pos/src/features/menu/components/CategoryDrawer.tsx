@@ -69,18 +69,18 @@ export const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
       />
       
       {/* Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out rounded-l-2xl overflow-hidden">
+      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-card shadow-xl z-50 transform transition-transform duration-300 ease-in-out rounded-l-2xl overflow-hidden">
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <div className="flex items-center justify-between p-6 border-b border-border bg-card">
+            <h2 className="text-lg font-semibold text-foreground">
               {editingCategory ? 'Edit Category' : 'Add New Category'}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
             >
-              <ChevronRight className="w-5 h-5 text-gray-500" />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
 
@@ -89,15 +89,15 @@ export const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
             <div className="flex-1 p-6 space-y-6 overflow-y-auto">
               {/* Icon Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Category Icon
                 </label>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
                     {formData.icon ? (
                       <span className="text-2xl">{formData.icon}</span>
                     ) : (
-                      <Upload className="w-6 h-6 text-gray-400" />
+                      <Upload className="w-6 h-6 text-muted-foreground" />
                     )}
                   </div>
                   <div className="flex-1">
@@ -106,9 +106,9 @@ export const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
                       placeholder="Enter emoji or icon (e.g., 🍕)"
                       value={formData.icon}
                       onChange={(e) => handleInputChange('icon', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Use emoji or upload an icon
                     </p>
                   </div>
@@ -117,7 +117,7 @@ export const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
 
               {/* Category Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Category Name *
                 </label>
                 <input
@@ -126,39 +126,39 @@ export const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
                   placeholder="Enter category name"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary"
                 />
               </div>
 
               {/* Parent Menu Dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Parent Menu
                 </label>
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setIsParentDropdownOpen(!isParentDropdownOpen)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white text-left flex items-center justify-between"
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary text-left flex items-center justify-between"
                   >
-                    <span className="text-gray-900">
+                    <span className="text-foreground">
                       {formData.parentId 
                         ? parentCategories.find(cat => cat.id === formData.parentId)?.name || 'Select parent category'
                         : 'Select parent category'
                       }
                     </span>
-                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isParentDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isParentDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
                   
                   {isParentDropdownOpen && (
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       <button
                         type="button"
                         onClick={() => {
                           handleInputChange('parentId', '');
                           setIsParentDropdownOpen(false);
                         }}
-                        className="w-full px-3 py-2 text-left hover:bg-gray-50 text-gray-500 first:rounded-t-lg"
+                        className="w-full px-3 py-2 text-left hover:bg-accent text-muted-foreground first:rounded-t-lg"
                       >
                         None (Top Level)
                       </button>
@@ -170,7 +170,7 @@ export const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
                             handleInputChange('parentId', category.id);
                             setIsParentDropdownOpen(false);
                           }}
-                          className={`w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2 ${
+                          className={`w-full px-3 py-2 text-left hover:bg-accent flex items-center gap-2 text-foreground ${
                             index === parentCategories.length - 1 ? 'rounded-b-lg' : ''
                           }`}
                         >
@@ -181,14 +181,14 @@ export const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Optional: Select a parent category to create a subcategory
                 </p>
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Description
                 </label>
                 <textarea
@@ -196,28 +196,28 @@ export const CategoryDrawer: React.FC<CategoryDrawerProps> = ({
                   placeholder="Enter category description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary resize-none"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Optional: Brief description of this category
                 </p>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
+            <div className="p-6 border-t border-border bg-muted/50">
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!formData.name.trim()}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
                 >
                   {editingCategory ? 'Update Category' : 'Create Category'}
                 </button>

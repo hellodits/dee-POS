@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Menu, Calendar, Download, RefreshCw } from 'lucide-react';
 import { ReportTab } from '../types';
 import { ReportCharts } from './ReportCharts';
@@ -12,6 +13,8 @@ interface ReportsPageProps {
 }
 
 export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
+  const { t } = useTranslation();
+  
   const {
     activeTab,
     dateRange,
@@ -29,10 +32,10 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
   const [exportLoading, setExportLoading] = useState(false);
 
   const tabs = [
-    { id: 'revenue' as const, label: 'Revenue Report', icon: '💰' },
-    { id: 'orders' as const, label: 'Orders Report', icon: '📋' },
-    { id: 'reservation' as const, label: 'Reservation Report', icon: '📅' },
-    { id: 'staff' as const, label: 'Staff Report', icon: '👥' }
+    { id: 'revenue' as const, label: t('reports.revenueReport'), icon: '💰' },
+    { id: 'orders' as const, label: t('reports.ordersReport'), icon: '📋' },
+    { id: 'reservation' as const, label: t('reports.reservationReport'), icon: '📅' },
+    { id: 'staff' as const, label: t('reports.staffReport'), icon: '👥' }
   ];
 
   // Load report on mount and when tab/date changes
@@ -51,10 +54,10 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
       if (result.success) {
         alert(result.message);
       } else {
-        alert(result.error || 'Gagal export report');
+        alert(result.error || t('reports.exportFailed'));
       }
     } catch (error) {
-      alert('Gagal export report');
+      alert(t('reports.exportFailed'));
     } finally {
       setExportLoading(false);
     }
@@ -80,9 +83,9 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
             </button>
           )}
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Reports & Analytics</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Generate comprehensive reports for your restaurant operations
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">{t('reports.title')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t('reports.subtitle')}
             </p>
           </div>
         </div>
@@ -126,7 +129,7 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
               className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
-              <span>{exportLoading ? 'Exporting...' : 'Export Excel'}</span>
+              <span>{exportLoading ? t('reports.exporting') : t('reports.exportExcel')}</span>
             </button>
           </div>
 
@@ -135,7 +138,7 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Start Date
+                  {t('reports.startDate')}
                 </label>
                 <div className="relative">
                   <input
@@ -150,7 +153,7 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  End Date
+                  {t('reports.endDate')}
                 </label>
                 <div className="relative">
                   <input
@@ -171,7 +174,7 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
                 className="flex items-center space-x-2 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                <span>{isLoading ? 'Loading...' : 'Generate Report'}</span>
+                <span>{isLoading ? t('common.loading') : t('reports.generateReport')}</span>
               </button>
             </div>
           </div>
@@ -182,9 +185,9 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
               <select
                 value={reportData.orders.filters.status}
                 onChange={(e) => updateOrderFilters({ status: e.target.value })}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="px-3 py-2 border border-input rounded-lg bg-background text-foreground"
               >
-                <option value="all">Semua Status</option>
+                <option value="all">{t('reports.allStatus')}</option>
                 <option value="PENDING">Pending</option>
                 <option value="CONFIRMED">Confirmed</option>
                 <option value="COOKING">Cooking</option>
@@ -196,29 +199,29 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
               <select
                 value={reportData.orders.filters.payment_status}
                 onChange={(e) => updateOrderFilters({ payment_status: e.target.value })}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="px-3 py-2 border border-input rounded-lg bg-background text-foreground"
               >
-                <option value="all">Semua Pembayaran</option>
-                <option value="UNPAID">Belum Bayar</option>
-                <option value="PAID">Sudah Bayar</option>
-                <option value="REFUNDED">Refund</option>
+                <option value="all">{t('reports.allPayment')}</option>
+                <option value="UNPAID">{t('reports.unpaid')}</option>
+                <option value="PAID">{t('reports.paid')}</option>
+                <option value="REFUNDED">{t('reports.refunded')}</option>
               </select>
               
               <select
                 value={reportData.orders.filters.order_source}
                 onChange={(e) => updateOrderFilters({ order_source: e.target.value })}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="px-3 py-2 border border-input rounded-lg bg-background text-foreground"
               >
-                <option value="all">Semua Sumber</option>
-                <option value="POS">Kasir</option>
-                <option value="WEB">Online</option>
+                <option value="all">{t('reports.allSource')}</option>
+                <option value="POS">{t('reports.cashier')}</option>
+                <option value="WEB">{t('reports.online')}</option>
               </select>
               
               <button
                 onClick={() => generateReport(activeTab, dateRange)}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
-                Apply Filter
+                {t('common.applyFilter')}
               </button>
             </div>
           )}
@@ -244,11 +247,11 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {activeTab === 'revenue' ? 'Total Orders' : 
-                   activeTab === 'orders' ? 'Total Orders' :
-                   activeTab === 'reservation' ? 'Total Reservations' : 'Total Staff'}
+                  {activeTab === 'revenue' ? t('reports.totalOrders') : 
+                   activeTab === 'orders' ? t('reports.totalOrders') :
+                   activeTab === 'reservation' ? t('reports.totalReservations') : t('reports.totalStaff')}
                 </p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                <p className="text-2xl font-semibold text-foreground">
                   {summary.totalRecords.toLocaleString()}
                 </p>
               </div>
@@ -262,9 +265,9 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {activeTab === 'revenue' ? 'Total Revenue' : 
-                   activeTab === 'orders' ? 'Total Revenue' :
-                   activeTab === 'reservation' ? 'Total Guests' : 'Total Hours'}
+                  {activeTab === 'revenue' ? t('reports.totalRevenue') : 
+                   activeTab === 'orders' ? t('reports.totalRevenue') :
+                   activeTab === 'reservation' ? t('reports.totalGuests') : t('reports.totalHours')}
                 </p>
                 <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {activeTab === 'revenue' ? summary.totalValue : 
@@ -283,9 +286,9 @@ export function ReportsPage({ isMobile, onToggleSidebar }: ReportsPageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {activeTab === 'revenue' ? 'Avg Order Value' : 
-                   activeTab === 'orders' ? 'Avg Order Value' :
-                   activeTab === 'reservation' ? 'Confirmed' : 'Total Sales'}
+                  {activeTab === 'revenue' ? t('reports.avgOrderValue') : 
+                   activeTab === 'orders' ? t('reports.avgOrderValue') :
+                   activeTab === 'reservation' ? t('reports.confirmed') : t('reports.totalSales')}
                 </p>
                 <p className="text-2xl font-semibold text-gray-900 dark:text-white">
                   {activeTab === 'revenue' ? (summary as { averageValue?: string }).averageValue || '$0' : 

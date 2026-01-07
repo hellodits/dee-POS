@@ -56,13 +56,13 @@ export const InventoryList: React.FC<InventoryListProps> = ({
         {(lowStockCount > 0 || outOfStockCount > 0) && (
           <div className="flex flex-wrap gap-2 mb-4">
             {lowStockCount > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-sm">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-lg text-sm">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span className="font-medium">{lowStockCount} Stok Rendah</span>
               </div>
             )}
             {outOfStockCount > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 rounded-lg text-sm">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg text-sm">
                 <XCircle className="w-3.5 h-3.5" />
                 <span className="font-medium">{outOfStockCount} Habis</span>
               </div>

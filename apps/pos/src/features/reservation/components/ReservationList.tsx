@@ -65,15 +65,15 @@ export const ReservationList: React.FC<ReservationListProps> = ({
   const getStatusColor = (status: LegacyReservation['status']) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-green-50 text-green-700 border-green-200';
+        return 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
       case 'pending':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+        return 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
       case 'cancelled':
-        return 'bg-gray-50 text-gray-500 border-gray-200';
+        return 'bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700';
       case 'completed':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700';
     }
   };
 
@@ -100,12 +100,12 @@ export const ReservationList: React.FC<ReservationListProps> = ({
 
   if (reservations.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-        <div className="text-gray-400 mb-2">
+      <div className="bg-card rounded-lg border border-border p-8 text-center">
+        <div className="text-muted-foreground mb-2">
           <Clock className="w-12 h-12 mx-auto" />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-1">Tidak Ada Reservasi</h3>
-        <p className="text-gray-500">Tidak ada reservasi untuk tanggal yang dipilih.</p>
+        <h3 className="text-lg font-medium text-foreground mb-1">Tidak Ada Reservasi</h3>
+        <p className="text-muted-foreground">Tidak ada reservasi untuk tanggal yang dipilih.</p>
       </div>
     );
   }
@@ -115,13 +115,13 @@ export const ReservationList: React.FC<ReservationListProps> = ({
       {reservations.map((reservation) => (
         <div
           key={reservation.id}
-          className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+          className="bg-card rounded-lg border border-border p-4 hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => onReservationClick?.(reservation)}
         >
           <div className="flex items-start justify-between mb-2">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-gray-900">{reservation.customerName}</h3>
+                <h3 className="font-semibold text-foreground">{reservation.customerName}</h3>
                 <span className={`
                   px-2 py-0.5 rounded-full text-xs font-medium border
                   ${getStatusColor(reservation.status)}
@@ -130,7 +130,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                 </span>
               </div>
               
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4" />
                   <span>{reservation.pax} orang</span>
@@ -142,7 +142,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                 {/* WhatsApp clickable */}
                 <button
                   onClick={(e) => handleWhatsAppClick(e, reservation)}
-                  className="flex items-center gap-1 text-green-600 hover:text-green-700 hover:underline transition-colors"
+                  className="flex items-center gap-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:underline transition-colors"
                   title="Chat via WhatsApp"
                 >
                   <WhatsAppIcon className="w-4 h-4" />
@@ -159,7 +159,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                     e.stopPropagation();
                     onEditReservation(reservation);
                   }}
-                  className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="p-2 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                   title="Edit"
                 >
                   <Pencil className="w-4 h-4" />
@@ -171,7 +171,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({
                     e.stopPropagation();
                     onDeleteReservation(reservation);
                   }}
-                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   title="Hapus"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -181,8 +181,8 @@ export const ReservationList: React.FC<ReservationListProps> = ({
           </div>
 
           {reservation.specialRequests && (
-            <div className="mt-2 p-2 bg-gray-50 rounded-md">
-              <p className="text-xs text-gray-600">
+            <div className="mt-2 p-2 bg-muted rounded-md">
+              <p className="text-xs text-muted-foreground">
                 <span className="font-medium">Catatan:</span> {reservation.specialRequests}
               </p>
             </div>

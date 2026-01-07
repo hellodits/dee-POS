@@ -59,7 +59,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-background relative">
       {/* Floating Sidebar */}
       <Sidebar 
         isCollapsed={isSidebarCollapsed}

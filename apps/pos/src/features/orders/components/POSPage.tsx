@@ -232,7 +232,7 @@ export const POSPage: React.FC<POSPageProps> = ({
           {/* Close/Back Button - Right side with X icon */}
           <button
             onClick={onBackToDashboard}
-            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
             title="Tutup & Kembali"
           >
             <X className="w-6 h-6" />
@@ -241,14 +241,14 @@ export const POSPage: React.FC<POSPageProps> = ({
       </div>
 
       {/* Main Content - Fill remaining height */}
-      <div className="flex-1 flex overflow-hidden bg-gray-50">
+      <div className="flex-1 flex overflow-hidden bg-muted/30">
         {/* Left Side - Menu Catalog */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Category Rail - Fixed */}
-          <div className="flex-shrink-0 bg-white border-b border-gray-200 p-4">
+          <div className="flex-shrink-0 bg-card border-b border-border p-4">
             {isLoadingMenu ? (
               <div className="flex items-center justify-center py-4">
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
               <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -259,8 +259,8 @@ export const POSPage: React.FC<POSPageProps> = ({
                     className={`
                       flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-xl transition-colors min-w-[100px]
                       ${selectedCategory === category.id
-                        ? 'bg-red-50 text-red-700 border-2 border-red-200'
-                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-2 border-transparent'
+                        ? 'bg-primary/10 text-primary border-2 border-primary/30'
+                        : 'bg-muted text-muted-foreground hover:bg-accent border-2 border-transparent'
                       }
                     `}
                   >
@@ -279,10 +279,10 @@ export const POSPage: React.FC<POSPageProps> = ({
           <div className="flex-1 p-4 overflow-y-auto">
             {isLoadingMenu ? (
               <div className="flex items-center justify-center h-64">
-                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
               </div>
             ) : filteredMenuItems.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-muted-foreground">
                 <p>Tidak ada menu di kategori ini</p>
               </div>
             ) : (
@@ -294,10 +294,10 @@ export const POSPage: React.FC<POSPageProps> = ({
                   return (
                     <div
                       key={item.id}
-                      className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                      className="bg-card rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow"
                     >
                       {/* Image */}
-                      <div className="aspect-square bg-gray-100 overflow-hidden">
+                      <div className="aspect-square bg-muted overflow-hidden">
                         <img
                           src={item.image}
                           alt={item.name}
@@ -311,10 +311,10 @@ export const POSPage: React.FC<POSPageProps> = ({
 
                       {/* Content */}
                       <div className="p-3">
-                        <h3 className="font-medium text-gray-900 text-sm mb-1 line-clamp-2">
+                        <h3 className="font-medium text-foreground text-sm mb-1 line-clamp-2">
                           {item.name}
                         </h3>
-                        <p className="text-red-600 font-semibold text-sm mb-3">
+                        <p className="text-primary font-semibold text-sm mb-3">
                           {formatCurrency(item.price)}
                         </p>
 
@@ -323,7 +323,7 @@ export const POSPage: React.FC<POSPageProps> = ({
                           <button
                             onClick={() => handleAddToCart(item)}
                             disabled={!item.available}
-                            className="w-full flex items-center justify-center gap-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 transition-colors text-sm font-medium"
+                            className="w-full flex items-center justify-center gap-1 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground transition-colors text-sm font-medium"
                           >
                             <Plus className="w-4 h-4" />
                             Add
@@ -332,14 +332,14 @@ export const POSPage: React.FC<POSPageProps> = ({
                           <div className="flex items-center justify-between">
                             <button
                               onClick={() => updateCartItemQuantity(cartItem!.id, quantity - 1)}
-                              className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                              className="w-8 h-8 flex items-center justify-center bg-muted hover:bg-accent rounded-lg transition-colors"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
-                            <span className="font-semibold text-gray-900">{quantity}</span>
+                            <span className="font-semibold text-foreground">{quantity}</span>
                             <button
                               onClick={() => updateCartItemQuantity(cartItem!.id, quantity + 1)}
-                              className="w-8 h-8 flex items-center justify-center bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                              className="w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -356,16 +356,16 @@ export const POSPage: React.FC<POSPageProps> = ({
 
         {/* Right Side - Cart Sidebar (Desktop Only) - Fixed */}
         {!isMobile && (
-          <div className="w-96 bg-white border-l border-gray-200 flex flex-col flex-shrink-0 overflow-hidden">
+          <div className="w-96 bg-card border-l border-border flex flex-col flex-shrink-0 overflow-hidden">
             {/* Cart Header - Fixed */}
-            <div className="flex-shrink-0 p-4 border-b border-gray-200">
+            <div className="flex-shrink-0 p-4 border-b border-border">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-foreground">
                   {selectedTable ? selectedTable.name : 'Pilih Meja'}
                 </h2>
                 <button
                   onClick={() => setIsTableModalOpen(true)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
@@ -376,31 +376,31 @@ export const POSPage: React.FC<POSPageProps> = ({
                 placeholder="Nama Customer"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary"
               />
             </div>
 
             {/* Cart Items - Scrollable */}
             <div className="flex-1 overflow-y-auto p-4">
               {cartItems.length === 0 ? (
-                <div className="text-center text-gray-500 mt-8">
+                <div className="text-center text-muted-foreground mt-8">
                   <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>Keranjang kosong</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-semibold">
+                    <div key={item.id} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center text-primary font-semibold">
                         {item.quantity}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 text-sm truncate">{item.name}</h4>
-                        <p className="text-red-600 font-semibold text-sm">{formatCurrency(item.price * item.quantity)}</p>
+                        <h4 className="font-medium text-foreground text-sm truncate">{item.name}</h4>
+                        <p className="text-primary font-semibold text-sm">{formatCurrency(item.price * item.quantity)}</p>
                       </div>
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-muted-foreground hover:text-destructive transition-colors"
                       >
                         ×
                       </button>
@@ -411,20 +411,20 @@ export const POSPage: React.FC<POSPageProps> = ({
             </div>
 
             {/* Cart Summary - Fixed */}
-            <div className="flex-shrink-0 p-4 border-t border-gray-200 space-y-4">
+            <div className="flex-shrink-0 p-4 border-t border-border space-y-4">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="text-gray-900">{formatCurrency(getCartSubtotal())}</span>
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-foreground">{formatCurrency(getCartSubtotal())}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Pajak 10%</span>
-                  <span className="text-gray-900">{formatCurrency(getCartTax())}</span>
+                  <span className="text-muted-foreground">Pajak 10%</span>
+                  <span className="text-foreground">{formatCurrency(getCartTax())}</span>
                 </div>
-                <div className="border-t border-gray-200 pt-2">
+                <div className="border-t border-border pt-2">
                   <div className="flex justify-between font-semibold">
-                    <span className="text-gray-900">Total</span>
-                    <span className="text-red-600 text-lg">{formatCurrency(getCartTotal())}</span>
+                    <span className="text-foreground">Total</span>
+                    <span className="text-primary text-lg">{formatCurrency(getCartTotal())}</span>
                   </div>
                 </div>
               </div>
@@ -433,7 +433,7 @@ export const POSPage: React.FC<POSPageProps> = ({
               <button
                 onClick={handleSendToKitchen}
                 disabled={cartItems.length === 0 || !selectedTable || !customerName.trim() || isSubmitting}
-                className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -447,7 +447,7 @@ export const POSPage: React.FC<POSPageProps> = ({
               
               {/* Validation hints */}
               {(cartItems.length === 0 || !selectedTable || !customerName.trim()) && (
-                <p className="text-xs text-center text-gray-500">
+                <p className="text-xs text-center text-muted-foreground">
                   {cartItems.length === 0 && 'Tambahkan item ke keranjang'}
                   {cartItems.length > 0 && !selectedTable && 'Pilih meja terlebih dahulu'}
                   {cartItems.length > 0 && selectedTable && !customerName.trim() && 'Masukkan nama customer'}
@@ -465,13 +465,13 @@ export const POSPage: React.FC<POSPageProps> = ({
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setIsCartDrawerOpen(false)}
           />
-          <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl z-50 flex flex-col">
-            <div className="p-4 border-b border-gray-200">
+          <div className="fixed right-0 top-0 h-full w-80 bg-card shadow-xl z-50 flex flex-col">
+            <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">Keranjang</h2>
+                <h2 className="text-lg font-semibold text-foreground">Keranjang</h2>
                 <button
                   onClick={() => setIsCartDrawerOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
                 >
                   ×
                 </button>
@@ -480,7 +480,7 @@ export const POSPage: React.FC<POSPageProps> = ({
               <div className="mb-3">
                 <button
                   onClick={() => setIsTableModalOpen(true)}
-                  className="w-full p-2 text-left border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="w-full p-2 text-left border border-input rounded-lg hover:bg-accent transition-colors text-foreground"
                 >
                   {selectedTable ? selectedTable.name : 'Pilih Meja'}
                 </button>
@@ -491,30 +491,30 @@ export const POSPage: React.FC<POSPageProps> = ({
                 placeholder="Nama Customer"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary"
               />
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
               {cartItems.length === 0 ? (
-                <div className="text-center text-gray-500 mt-8">
+                <div className="text-center text-muted-foreground mt-8">
                   <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>Keranjang kosong</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-semibold">
+                    <div key={item.id} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center text-primary font-semibold">
                         {item.quantity}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-900 text-sm truncate">{item.name}</h4>
-                        <p className="text-red-600 font-semibold text-sm">{formatCurrency(item.price * item.quantity)}</p>
+                        <h4 className="font-medium text-foreground text-sm truncate">{item.name}</h4>
+                        <p className="text-primary font-semibold text-sm">{formatCurrency(item.price * item.quantity)}</p>
                       </div>
                       <button
                         onClick={() => removeFromCart(item.id)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-muted-foreground hover:text-destructive transition-colors"
                       >
                         ×
                       </button>
@@ -524,20 +524,20 @@ export const POSPage: React.FC<POSPageProps> = ({
               )}
             </div>
 
-            <div className="p-4 border-t border-gray-200 space-y-4">
+            <div className="p-4 border-t border-border space-y-4">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="text-gray-900">{formatCurrency(getCartSubtotal())}</span>
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-foreground">{formatCurrency(getCartSubtotal())}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Pajak 10%</span>
-                  <span className="text-gray-900">{formatCurrency(getCartTax())}</span>
+                  <span className="text-muted-foreground">Pajak 10%</span>
+                  <span className="text-foreground">{formatCurrency(getCartTax())}</span>
                 </div>
-                <div className="border-t border-gray-200 pt-2">
+                <div className="border-t border-border pt-2">
                   <div className="flex justify-between font-semibold">
-                    <span className="text-gray-900">Total</span>
-                    <span className="text-gray-900">{formatCurrency(getCartTotal())}</span>
+                    <span className="text-foreground">Total</span>
+                    <span className="text-foreground">{formatCurrency(getCartTotal())}</span>
                   </div>
                 </div>
               </div>
@@ -545,7 +545,7 @@ export const POSPage: React.FC<POSPageProps> = ({
               <button
                 onClick={handleSendToKitchen}
                 disabled={cartItems.length === 0 || !selectedTable || !customerName.trim()}
-                className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium transition-colors"
+                className="w-full py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-medium transition-colors"
               >
                 Kirim ke Dapur
               </button>
@@ -562,16 +562,16 @@ export const POSPage: React.FC<POSPageProps> = ({
             onClick={() => setIsTableModalOpen(false)}
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="bg-card rounded-2xl shadow-xl w-full max-w-md">
               <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Pilih Meja</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">Pilih Meja</h2>
                 
                 {isLoadingTables ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : availableTables.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-muted-foreground">
                     <p>Tidak ada meja tersedia</p>
                   </div>
                 ) : (
@@ -586,8 +586,8 @@ export const POSPage: React.FC<POSPageProps> = ({
                         className={`
                           p-4 rounded-lg border-2 transition-colors text-center
                           ${selectedTable?.id === table.id
-                            ? 'border-red-500 bg-red-50 text-red-700'
-                            : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border hover:border-muted-foreground/30 text-foreground'
                           }
                         `}
                       >
@@ -600,7 +600,7 @@ export const POSPage: React.FC<POSPageProps> = ({
 
                 <button
                   onClick={() => setIsTableModalOpen(false)}
-                  className="w-full py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                  className="w-full py-2 text-muted-foreground hover:text-foreground font-medium transition-colors"
                 >
                   Batal
                 </button>

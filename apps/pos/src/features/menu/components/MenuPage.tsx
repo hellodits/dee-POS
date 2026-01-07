@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Menu, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { CategoryRail } from './CategoryRail';
 import { MenuTable } from './MenuTable';
@@ -17,6 +18,8 @@ export const MenuPage: React.FC<MenuPageProps> = ({
   isMobile = false,
   onToggleSidebar = () => {},
 }) => {
+  const { t } = useTranslation();
+  
   // Custom hook for menu data management
   const {
     categories,
@@ -85,20 +88,20 @@ export const MenuPage: React.FC<MenuPageProps> = ({
       setEditingMenuItem(null);
     } catch (err) {
       console.error('Failed to save menu item:', err);
-      alert('Gagal menyimpan menu item');
+      alert(t('menu.failedToSave'));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDeleteMenuItem = async (itemId: string) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus menu item ini?')) {
+    if (window.confirm(t('menu.confirmDelete'))) {
       setIsDeleting(itemId);
       try {
         await deleteMenuItem(itemId);
       } catch (err) {
         console.error('Failed to delete menu item:', err);
-        alert('Gagal menghapus menu item');
+        alert(t('menu.failedToDelete'));
       } finally {
         setIsDeleting(null);
       }
@@ -124,21 +127,21 @@ export const MenuPage: React.FC<MenuPageProps> = ({
             <button
               onClick={onToggleSidebar}
               className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-              title="Menu"
+              title={t('common.menu')}
             >
               <Menu className="w-5 h-5" />
             </button>
           )}
           <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Manajemen Menu</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">{t('menu.title')}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Kelola kategori dan item menu restoran Anda
+              {t('menu.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>{categories.length - 1} Kategori</span>
+            <span>{categories.length - 1} {t('common.categories')}</span>
             <span>•</span>
-            <span>{menuItems.length} Item</span>
+            <span>{menuItems.length} {t('common.items')}</span>
           </div>
         </div>
       </div>
@@ -149,22 +152,22 @@ export const MenuPage: React.FC<MenuPageProps> = ({
           {/* Loading State */}
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 className="w-10 h-10 text-red-600 animate-spin mb-4" />
-              <p className="text-gray-500">Memuat data menu...</p>
+              <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+              <p className="text-muted-foreground">{t('menu.loadingData')}</p>
             </div>
           )}
 
           {/* Error State */}
           {error && !isLoading && (
             <div className="flex flex-col items-center justify-center py-16">
-              <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-              <p className="text-gray-700 font-medium mb-2">{error}</p>
+              <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+              <p className="text-foreground font-medium mb-2">{error}</p>
               <button
                 onClick={refetch}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
-                Coba Lagi
+                {t('common.tryAgain')}
               </button>
             </div>
           )}

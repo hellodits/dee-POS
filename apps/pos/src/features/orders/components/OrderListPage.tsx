@@ -24,29 +24,29 @@ const ConfirmModal: React.FC<{
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-        <button onClick={onCancel} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+      <div className="relative bg-card rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+        <button onClick={onCancel} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
           <X className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
+          <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
         </div>
-        <p className="text-gray-600 mb-6">{message}</p>
+        <p className="text-muted-foreground mb-6">{message}</p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors font-medium"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:bg-red-300"
+            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:bg-red-300 dark:disabled:bg-red-800"
           >
             {isLoading ? 'Menghapus...' : confirmText}
           </button>
@@ -70,42 +70,42 @@ const OrderDetailModal: React.FC<{
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+      <div className="relative bg-card rounded-xl shadow-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
           <X className="w-5 h-5" />
         </button>
         
-        <h3 className="text-xl font-bold text-gray-900 mb-1">Order {order.orderNumber}</h3>
-        <p className="text-sm text-gray-500 mb-4">{order.tableName} • {order.customerName}</p>
+        <h3 className="text-xl font-bold text-foreground mb-1">Order {order.orderNumber}</h3>
+        <p className="text-sm text-muted-foreground mb-4">{order.tableName} • {order.customerName}</p>
         
         {/* Order Items */}
-        <div className="border rounded-lg p-4 mb-4">
-          <h4 className="font-semibold text-gray-900 mb-3">Items</h4>
+        <div className="border border-border rounded-lg p-4 mb-4">
+          <h4 className="font-semibold text-foreground mb-3">Items</h4>
           <div className="space-y-2">
             {order.items.map((item, idx) => (
               <div key={idx} className="flex justify-between text-sm">
-                <span>{item.quantity}x {item.name}</span>
-                <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
+                <span className="text-foreground">{item.quantity}x {item.name}</span>
+                <span className="font-medium text-foreground">{formatCurrency(item.price * item.quantity)}</span>
               </div>
             ))}
           </div>
-          <div className="border-t mt-3 pt-3 flex justify-between font-semibold">
-            <span>Total</span>
-            <span className="text-red-600">{formatCurrency(order.total)}</span>
+          <div className="border-t border-border mt-3 pt-3 flex justify-between font-semibold">
+            <span className="text-foreground">Total</span>
+            <span className="text-primary">{formatCurrency(order.total)}</span>
           </div>
         </div>
         
         {/* Status Update */}
         <div className="mb-4">
-          <h4 className="font-semibold text-gray-900 mb-3">Update Status</h4>
+          <h4 className="font-semibold text-foreground mb-3">Update Status</h4>
           <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => onUpdateStatus('in-process')}
               disabled={order.status === 'in-process'}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 order.status === 'in-process' 
-                  ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-400' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-yellow-50'
+                  ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-2 border-yellow-400 dark:border-yellow-600' 
+                  : 'bg-muted text-muted-foreground hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
               }`}
             >
               In Process
@@ -115,8 +115,8 @@ const OrderDetailModal: React.FC<{
               disabled={order.status === 'ready'}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 order.status === 'ready' 
-                  ? 'bg-green-100 text-green-700 border-2 border-green-400' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-green-50'
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-2 border-green-400 dark:border-green-600' 
+                  : 'bg-muted text-muted-foreground hover:bg-green-50 dark:hover:bg-green-900/20'
               }`}
             >
               Ready
@@ -126,8 +126,8 @@ const OrderDetailModal: React.FC<{
               disabled={order.status === 'completed'}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 order.status === 'completed' 
-                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-400' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-blue-50'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-2 border-blue-400 dark:border-blue-600' 
+                  : 'bg-muted text-muted-foreground hover:bg-blue-50 dark:hover:bg-blue-900/20'
               }`}
             >
               Completed
@@ -137,8 +137,8 @@ const OrderDetailModal: React.FC<{
               disabled={order.status === 'cancelled'}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 order.status === 'cancelled' 
-                  ? 'bg-gray-200 text-gray-700 border-2 border-gray-400' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-gray-400 dark:border-gray-500' 
+                  : 'bg-muted text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               Cancelled
@@ -148,7 +148,7 @@ const OrderDetailModal: React.FC<{
         
         <button
           onClick={onClose}
-          className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          className="w-full px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-accent transition-colors font-medium"
         >
           Tutup
         </button>
@@ -334,7 +334,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
       </div>
 
       {/* Controls */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+      <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Left Side - Status Tabs */}
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
@@ -345,8 +345,8 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
                 className={`
                   flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors border-b-2
                   ${orderStatus === tab.id
-                    ? 'text-red-700 border-red-600 bg-red-50'
-                    : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
+                    ? 'text-primary border-primary bg-primary/10'
+                    : 'text-muted-foreground border-transparent hover:text-foreground hover:bg-accent'
                   }
                 `}
               >
@@ -355,8 +355,8 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
                   <span className={`
                     ml-2 px-2 py-0.5 rounded-full text-xs
                     ${orderStatus === tab.id
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-gray-100 text-gray-600'
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-muted text-muted-foreground'
                     }
                   `}>
                     {tab.count}
@@ -370,12 +370,12 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Date Picker */}
             <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4 text-gray-400 hidden sm:block" />
+              <Calendar className="w-4 h-4 text-muted-foreground hidden sm:block" />
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm w-[120px] sm:w-auto"
+                className="px-2 py-1.5 border border-input rounded-lg text-sm w-[120px] sm:w-auto bg-background"
               />
             </div>
 
@@ -385,8 +385,8 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
               className={`
                 flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors
                 ${showSummary 
-                  ? 'bg-red-100 text-red-700 border border-red-200' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary/20 text-primary border border-primary/30' 
+                  : 'bg-muted text-muted-foreground hover:bg-accent'
                 }
               `}
               title="Tampilkan Rekap"
@@ -397,20 +397,20 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
 
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Cari order..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm w-40 sm:w-56"
+                className="pl-10 pr-4 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary text-sm w-40 sm:w-56"
               />
             </div>
 
             {/* Add New Order Button */}
             <button
               onClick={onAddNewOrder}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">New Order</span>
@@ -420,17 +420,17 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
       </div>
 
       {/* Orders Grid */}
-      <main className="flex-1 bg-gray-50 p-4 sm:p-6">
+      <main className="flex-1 bg-muted/30 p-4 sm:p-6">
         <div className={`${showSummary ? 'flex flex-col lg:flex-row gap-6' : ''}`}>
           {/* Orders List */}
           <div className={`${showSummary ? 'flex-1' : 'w-full'}`}>
             {orders.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-                <div className="text-gray-400 mb-4">
+              <div className="text-center py-12 bg-card rounded-xl border border-border">
+                <div className="text-muted-foreground mb-4">
                   <Plus className="w-16 h-16 mx-auto" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Order</h3>
-                <p className="text-gray-500 mb-6">
+                <h3 className="text-lg font-medium text-foreground mb-2">Tidak Ada Order</h3>
+                <p className="text-muted-foreground mb-6">
                   {searchQuery 
                     ? `Tidak ada order yang cocok dengan "${searchQuery}"`
                     : orderStatus === 'all' 
@@ -440,7 +440,7 @@ export const OrderListPage: React.FC<OrderListPageProps> = ({
                 </p>
                 <button
                   onClick={onAddNewOrder}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
                 >
                   <Plus className="w-5 h-5" />
                   Buat Order Pertama

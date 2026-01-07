@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Menu, 
   Calendar, 
@@ -74,6 +75,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
 }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [tables, setTables] = useState<Table[]>([]);
@@ -103,7 +105,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
         }
       } catch (err) {
         console.error('Failed to fetch reservation:', err);
-        setError('Gagal memuat data reservasi');
+        setError(t('reservation.failedToLoad'));
       } finally {
         setIsLoading(false);
       }
@@ -130,7 +132,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
         setReservation(response.data.data as Reservation);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Gagal menyetujui reservasi');
+      setError(err.response?.data?.error || t('reservation.failedToApprove'));
     } finally {
       setIsProcessing(false);
     }
@@ -139,7 +141,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
   const handleReject = async () => {
     if (!reservation) return;
     
-    if (!window.confirm('Apakah Anda yakin ingin menolak reservasi ini?')) return;
+    if (!window.confirm(t('reservation.confirmReject'))) return;
     
     setIsProcessing(true);
     try {
@@ -149,7 +151,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
         setReservation(response.data.data as Reservation);
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Gagal menolak reservasi');
+      setError(err.response?.data?.error || t('reservation.failedToReject'));
     } finally {
       setIsProcessing(false);
     }
@@ -158,16 +160,16 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
   const getStatusColor = (status: Reservation['status']) => {
     switch (status) {
       case 'APPROVED':
-        return 'bg-green-50 text-green-700 border-green-200';
+        return 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800';
       case 'PENDING':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+        return 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
       case 'REJECTED':
       case 'CANCELLED':
-        return 'bg-red-50 text-red-500 border-red-200';
+        return 'bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 border-red-200 dark:border-red-800';
       case 'COMPLETED':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700';
     }
   };
 
@@ -216,10 +218,10 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
           </div>
         </div>
         <div className="flex flex-col items-center justify-center h-64 text-center">
-          <AlertTriangle className="w-12 h-12 text-gray-400 mb-4" />
-          <h2 className="text-lg font-medium text-gray-900 mb-2">Reservasi Tidak Ditemukan</h2>
-          <p className="text-gray-500 mb-4">Reservasi yang Anda cari tidak ada.</p>
-          <button onClick={handleBack} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+          <AlertTriangle className="w-12 h-12 text-muted-foreground mb-4" />
+          <h2 className="text-lg font-medium text-foreground mb-2">Reservasi Tidak Ditemukan</h2>
+          <p className="text-muted-foreground mb-4">Reservasi yang Anda cari tidak ada.</p>
+          <button onClick={handleBack} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">
             Kembali ke Daftar Reservasi
           </button>
         </div>
@@ -253,7 +255,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 bg-gray-50">
+      <main className="flex-1 bg-muted/30">
         {/* Hero */}
         <div className="h-40 bg-gradient-to-r from-red-500 to-red-600 relative">
           <div className="absolute inset-0 bg-black bg-opacity-20"></div>
@@ -267,7 +269,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
 
         {/* Error Message */}
         {error && (
-          <div className="mx-4 sm:mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="mx-4 sm:mx-6 mt-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
             {error}
           </div>
         )}
@@ -277,25 +279,25 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Reservation Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-red-600" />
+            <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
                 Informasi Reservasi
               </h3>
               
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <Users className="w-4 h-4 text-gray-400" />
+                  <Users className="w-4 h-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{reservation.pax} Tamu</p>
-                    <p className="text-xs text-gray-500">Jumlah tamu</p>
+                    <p className="text-sm font-medium text-foreground">{reservation.pax} Tamu</p>
+                    <p className="text-xs text-muted-foreground">Jumlah tamu</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-foreground">
                       {new Date(reservation.date).toLocaleDateString('id-ID', {
                         weekday: 'long',
                         year: 'numeric',
@@ -303,38 +305,38 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
                         day: 'numeric'
                       })}
                     </p>
-                    <p className="text-xs text-gray-500">Tanggal reservasi</p>
+                    <p className="text-xs text-muted-foreground">Tanggal reservasi</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <Clock className="w-4 h-4 text-gray-400" />
+                  <Clock className="w-4 h-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{reservation.time}</p>
-                    <p className="text-xs text-gray-500">Jam reservasi</p>
+                    <p className="text-sm font-medium text-foreground">{reservation.time}</p>
+                    <p className="text-xs text-muted-foreground">Jam reservasi</p>
                   </div>
                 </div>
 
                 {tableInfo && (
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-red-100 rounded flex items-center justify-center">
-                      <span className="text-xs font-bold text-red-600">{tableInfo.number}</span>
+                    <div className="w-4 h-4 bg-primary/20 rounded flex items-center justify-center">
+                      <span className="text-xs font-bold text-primary">{tableInfo.number}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {tableInfo.name || `Meja ${tableInfo.number}`}
                       </p>
-                      <p className="text-xs text-gray-500">Kapasitas {tableInfo.capacity} orang</p>
+                      <p className="text-xs text-muted-foreground">Kapasitas {tableInfo.capacity} orang</p>
                     </div>
                   </div>
                 )}
 
                 {reservation.notes && (
                   <div className="flex items-start gap-3">
-                    <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 mb-1">Catatan Tamu</p>
-                      <p className="text-sm text-gray-600 bg-gray-50 rounded-md p-3">{reservation.notes}</p>
+                      <p className="text-sm font-medium text-foreground mb-1">Catatan Tamu</p>
+                      <p className="text-sm text-muted-foreground bg-muted rounded-md p-3">{reservation.notes}</p>
                     </div>
                   </div>
                 )}
@@ -342,16 +344,16 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
             </div>
 
             {/* Customer Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5 text-red-600" />
+            <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
                 Informasi Tamu
               </h3>
               
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{reservation.guest_name}</p>
-                  <p className="text-xs text-gray-500">Nama tamu</p>
+                  <p className="text-sm font-medium text-foreground">{reservation.guest_name}</p>
+                  <p className="text-xs text-muted-foreground">Nama tamu</p>
                 </div>
                 
                 {/* WhatsApp clickable */}
@@ -362,29 +364,29 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
                       href={generateWhatsAppLink(reservation)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-green-600 hover:text-green-700 hover:underline flex items-center gap-2"
+                      className="text-sm font-medium text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:underline flex items-center gap-2"
                     >
                       {reservation.whatsapp}
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
                         Chat
                       </span>
                     </a>
-                    <p className="text-xs text-gray-500">Klik untuk chat WhatsApp</p>
+                    <p className="text-xs text-muted-foreground">Klik untuk chat WhatsApp</p>
                   </div>
                 </div>
                 
                 {reservation.email && (
                   <div className="flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-gray-400" />
+                    <Mail className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{reservation.email}</p>
-                      <p className="text-xs text-gray-500">Email</p>
+                      <p className="text-sm font-medium text-foreground">{reservation.email}</p>
+                      <p className="text-xs text-muted-foreground">Email</p>
                     </div>
                   </div>
                 )}
                 
                 <div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Dibuat pada {new Date(reservation.createdAt).toLocaleString('id-ID')}
                   </p>
                 </div>
@@ -394,19 +396,19 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
 
           {/* Action Section for Pending Reservations */}
           {reservation.status === 'PENDING' && (
-            <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Tindakan</h3>
+            <div className="mt-6 bg-card rounded-lg shadow-sm border border-border p-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Tindakan</h3>
               
               <div className="space-y-4">
                 {/* Table Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Pilih Meja (Opsional)
                   </label>
                   <select
                     value={selectedTableId}
                     onChange={(e) => setSelectedTableId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary"
                   >
                     <option value="">-- Pilih Meja --</option>
                     {tables.map(table => (
@@ -419,7 +421,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
 
                 {/* Admin Notes */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Catatan Admin (Opsional)
                   </label>
                   <textarea
@@ -427,7 +429,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
                     onChange={(e) => setAdminNotes(e.target.value)}
                     rows={2}
                     placeholder="Catatan untuk tamu atau internal..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-background focus:ring-2 focus:ring-primary focus:border-primary resize-none"
                   />
                 </div>
 
@@ -436,7 +438,7 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
                   <button
                     onClick={handleReject}
                     disabled={isProcessing}
-                    className="flex-1 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex-1 px-4 py-2 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <X className="w-4 h-4" />
                     Tolak
@@ -460,9 +462,9 @@ export const ReservationDetail: React.FC<ReservationDetailProps> = ({
 
           {/* Admin Notes Display */}
           {reservation.admin_notes && (
-            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm font-medium text-blue-800 mb-1">Catatan Admin:</p>
-              <p className="text-sm text-blue-700">{reservation.admin_notes}</p>
+            <div className="mt-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Catatan Admin:</p>
+              <p className="text-sm text-blue-700 dark:text-blue-400">{reservation.admin_notes}</p>
             </div>
           )}
         </div>

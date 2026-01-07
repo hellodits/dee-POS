@@ -18,9 +18,9 @@ export function ProfilePage({ isMobile, onToggleSidebar }: ProfilePageProps) {
   const { t } = useTranslation();
 
   const sidebarItems = [
-    { id: 'profile' as const, label: 'My Profile', icon: User },
-    { id: 'access' as const, label: 'Manage Access', icon: Users },
-    { id: 'logout' as const, label: 'Logout', icon: LogOut },
+    { id: 'profile' as const, label: t('profile.myProfile'), icon: User },
+    { id: 'access' as const, label: t('profile.manageAccess'), icon: Users },
+    { id: 'logout' as const, label: t('auth.logout'), icon: LogOut },
   ];
 
   const handleLogout = () => {
@@ -49,30 +49,30 @@ export function ProfilePage({ isMobile, onToggleSidebar }: ProfilePageProps) {
   };
 
   return (
-    <div className="flex-1 bg-gray-50 min-h-screen flex flex-col">
+    <div className="flex-1 bg-background min-h-screen flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+      <div className="bg-card border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-center space-x-3">
           {isMobile && (
             <button
               onClick={onToggleSidebar}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors flex-shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
           )}
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 truncate">Profile & Settings</h1>
-            <p className="text-xs sm:text-sm text-gray-600 mt-0.5 truncate">
-              Welcome back, {currentUser.firstName || currentUser.role}
+            <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground truncate">{t('profile.title')}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
+              {t('profile.welcomeBack')}, {currentUser.firstName || currentUser.role}
             </p>
           </div>
           
           {/* Close Button */}
           <button
             onClick={() => navigate('/')}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-            title="Back to Dashboard"
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors flex-shrink-0"
+            title={t('profile.backToDashboard')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -80,7 +80,7 @@ export function ProfilePage({ isMobile, onToggleSidebar }: ProfilePageProps) {
       </div>
 
       {/* Mobile/Tablet Navigation Tabs */}
-      <div className="lg:hidden bg-white border-b border-gray-200 px-3 sm:px-4 py-2 sm:py-3 overflow-x-auto">
+      <div className="lg:hidden bg-card border-b border-border px-3 sm:px-4 py-2 sm:py-3 overflow-x-auto">
         <div className="flex space-x-2 min-w-max">
           {sidebarItems.filter(item => item.id !== 'logout').map((item) => {
             const IconComponent = item.icon;
@@ -92,8 +92,8 @@ export function ProfilePage({ isMobile, onToggleSidebar }: ProfilePageProps) {
                 onClick={() => setActiveView(item.id)}
                 className={`flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
                   isActive
-                    ? 'bg-red-50 text-red-700 border border-red-200'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent'
+                    ? 'bg-primary/10 text-primary border border-primary/30'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent border border-transparent'
                 }`}
               >
                 <IconComponent className="w-4 h-4 flex-shrink-0" />
@@ -107,7 +107,7 @@ export function ProfilePage({ isMobile, onToggleSidebar }: ProfilePageProps) {
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop Sidebar */}
-        <div className="hidden lg:flex lg:flex-col lg:w-64 lg:bg-white lg:border-r lg:border-gray-200 lg:flex-shrink-0">
+        <div className="hidden lg:flex lg:flex-col lg:w-64 lg:bg-card lg:border-r lg:border-border lg:flex-shrink-0">
           <nav className="flex-1 p-4 space-y-2">
             {sidebarItems.map((item) => {
               const IconComponent = item.icon;
@@ -120,10 +120,10 @@ export function ProfilePage({ isMobile, onToggleSidebar }: ProfilePageProps) {
                   onClick={() => handleSidebarClick(item.id)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left ${
                     isActive && !isLogout
-                      ? 'bg-red-50 text-red-700 border border-red-200'
+                      ? 'bg-primary/10 text-primary border border-primary/30'
                       : isLogout
-                        ? 'text-red-600 hover:text-red-700 hover:bg-red-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'text-destructive hover:text-destructive/90 hover:bg-destructive/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`}
                 >
                   <IconComponent className="w-5 h-5 flex-shrink-0" />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Menu, Filter, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { InventoryFilters } from './InventoryFilters';
 import { InventoryList } from './InventoryList';
@@ -17,6 +18,8 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({
   isMobile = false,
   onToggleSidebar = () => {},
 }) => {
+  const { t } = useTranslation();
+  
   const {
     items,
     categories,
@@ -61,7 +64,7 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({
       setIsFormOpen(false);
       setEditingItem(null);
     } catch (err) {
-      alert('Gagal menyimpan item inventori');
+      alert(t('inventory.failedToSave'));
     }
   };
 
@@ -84,17 +87,17 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({
       setIsStockModalOpen(false);
       setSelectedItem(null);
     } catch (err) {
-      alert('Gagal mengubah stok');
+      alert(t('inventory.failedToUpdateStock'));
     }
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus bahan ini?')) {
+    if (window.confirm(t('inventory.confirmDelete'))) {
       setIsDeleting(itemId);
       try {
         await deleteItem(itemId);
       } catch (err) {
-        alert('Gagal menghapus bahan');
+        alert(t('inventory.failedToDelete'));
       } finally {
         setIsDeleting(null);
       }
@@ -115,15 +118,15 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({
             <button
               onClick={onToggleSidebar}
               className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-              title="Menu"
+              title={t('common.menu')}
             >
               <Menu className="w-5 h-5" />
             </button>
           )}
           <div className="flex-1">
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Manajemen Inventori</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">{t('inventory.title')}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Kelola stok dan inventori restoran Anda
+              {t('inventory.subtitle')}
             </p>
           </div>
           {/* Mobile Filter Button */}
@@ -131,7 +134,7 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({
             <button
               onClick={() => setIsMobileFiltersOpen(true)}
               className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-target"
-              title="Open filters"
+              title={t('common.openFilters')}
             >
               <Filter className="w-5 h-5" />
             </button>
@@ -140,26 +143,26 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex bg-gray-50 overflow-hidden">
+      <main className="flex-1 flex bg-background overflow-hidden">
         {/* Loading State */}
         {isLoading && (
           <div className="flex-1 flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-10 h-10 text-red-600 animate-spin mb-4" />
-            <p className="text-gray-500">Memuat data inventori...</p>
+            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground">{t('inventory.loadingData')}</p>
           </div>
         )}
 
         {/* Error State */}
         {error && !isLoading && (
           <div className="flex-1 flex flex-col items-center justify-center py-16">
-            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-            <p className="text-gray-700 font-medium mb-2">{error}</p>
+            <AlertCircle className="w-12 h-12 text-destructive mb-4" />
+            <p className="text-foreground font-medium mb-2">{error}</p>
             <button
               onClick={refetch}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
-              Coba Lagi
+              {t('common.tryAgain')}
             </button>
           </div>
         )}
@@ -206,12 +209,12 @@ export const InventoryPage: React.FC<InventoryPageProps> = ({
             className="fixed inset-0 bg-black bg-opacity-50 z-40"
             onClick={() => setIsMobileFiltersOpen(false)}
           />
-          <div className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
-              <h2 className="text-lg font-semibold text-gray-900">Filter</h2>
+          <div className="fixed left-0 top-0 h-full w-80 bg-card shadow-xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
+              <h2 className="text-lg font-semibold text-foreground">{t('common.filter')}</h2>
               <button
                 onClick={() => setIsMobileFiltersOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
               >
                 ✕
               </button>

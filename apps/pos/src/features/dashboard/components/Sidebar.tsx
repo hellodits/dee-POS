@@ -86,15 +86,15 @@ export function Sidebar({
         <aside className={`
           fixed top-0 left-0 h-full w-64 z-50 transform transition-transform duration-300 ease-in-out
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-          bg-white/95 backdrop-blur-xl border-r border-gray-200/50 shadow-2xl
+          bg-card/95 backdrop-blur-xl border-r border-border/50 shadow-2xl
           lg:hidden
         `}>
           {/* Mobile Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200/50">
-            <h2 className="text-xl font-bold text-gray-900">DEEPOS</h2>
+          <div className="flex items-center justify-between p-6 border-b border-border/50">
+            <h2 className="text-xl font-bold text-foreground">DEEPOS</h2>
             <button
               onClick={onCloseMobileMenu}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -113,8 +113,8 @@ export function Sidebar({
                     onClick={() => handleMenuClick(item.path)}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 w-full text-left ${
                       active
-                        ? 'bg-red-50 text-red-700 border border-red-200'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'bg-primary/10 text-primary border border-primary/30'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                     }`}
                   >
                     <IconComponent className="w-5 h-5 flex-shrink-0" />
@@ -126,14 +126,14 @@ export function Sidebar({
           </nav>
 
           {/* Mobile Footer */}
-          <div className="p-4 border-t border-gray-200/50 space-y-3">
+          <div className="p-4 border-t border-border/50 space-y-3">
             <div className="flex items-center justify-between">
               <ThemeSwitcher />
               <LanguageSwitcher />
             </div>
             <button 
               onClick={handleLogout}
-              className="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 w-full transition-all duration-200 text-left"
+              className="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent w-full transition-all duration-200 text-left"
             >
               <LogOut className="w-5 h-5 flex-shrink-0" />
               <span>{t('auth.logout')}</span>
@@ -150,27 +150,27 @@ export function Sidebar({
       fixed top-4 left-4 bottom-4 z-30 
       ${isCollapsed ? 'w-16' : 'w-64'} 
       transition-all duration-300 ease-in-out
-      bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-xl
+      bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-xl
       flex flex-col overflow-hidden
     `}>
       {/* Logo Section */}
-      <div className="p-6 border-b border-gray-200/50">
+      <div className="p-6 border-b border-border/50">
         {isCollapsed ? (
           <div 
             className="flex justify-center cursor-pointer"
             onClick={onToggleSidebar}
             title="Expand sidebar"
           >
-            <div className="w-8 h-8 bg-red-600 rounded-xl flex items-center justify-center hover:bg-red-700 transition-colors">
-              <span className="text-white font-bold text-sm">D</span>
+            <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center hover:bg-primary/90 transition-colors">
+              <span className="text-primary-foreground font-bold text-sm">D</span>
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">DEEPOS</h2>
+            <h2 className="text-xl font-bold text-foreground">DEEPOS</h2>
             <button
               onClick={onToggleSidebar}
-              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
               title="Collapse sidebar"
             >
               <PanelLeftClose className="w-5 h-5" />
@@ -197,14 +197,14 @@ export function Sidebar({
                     : 'space-x-3 px-4 py-3 text-left'
                   }
                   ${active
-                    ? 'bg-red-50 text-red-700 border border-red-200 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-primary/10 text-primary border border-primary/30 shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }
                 `}
                 title={isCollapsed ? item.label : undefined}
               >
                 <IconComponent className={`w-5 h-5 flex-shrink-0 ${
-                  active ? 'text-red-600' : 'text-gray-500 group-hover:text-gray-700'
+                  active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                 }`} />
                 {!isCollapsed && <span>{item.label}</span>}
               </button>
@@ -214,7 +214,7 @@ export function Sidebar({
       </nav>
 
       {/* Settings & Logout */}
-      <div className="p-4 border-t border-gray-200/50 space-y-3">
+      <div className="p-4 border-t border-border/50 space-y-3">
         {/* Theme & Language Switchers */}
         {isCollapsed ? (
           <div className="flex flex-col items-center space-y-3">
@@ -232,7 +232,7 @@ export function Sidebar({
         <button 
           onClick={handleLogout}
           className={`
-            flex items-center rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 w-full transition-all duration-200
+            flex items-center rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent w-full transition-all duration-200
             ${isCollapsed 
               ? 'justify-center p-3' 
               : 'space-x-3 px-4 py-3 text-left'

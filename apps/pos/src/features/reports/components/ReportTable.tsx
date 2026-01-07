@@ -79,9 +79,9 @@ export function ReportTable({ activeTab, reportData, isLoading }: ReportTablePro
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-card rounded-xl border border-border p-6">
         <div className="flex items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -94,32 +94,32 @@ export function ReportTable({ activeTab, reportData, isLoading }: ReportTablePro
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">No. Order</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Tanggal</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Sumber</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Meja</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Tamu</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Status</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Pembayaran</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Total</th>
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 font-medium text-foreground">No. Order</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Tanggal</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Sumber</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Meja</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Tamu</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Status</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Pembayaran</th>
+              <th className="text-left py-3 px-4 font-medium text-foreground">Total</th>
             </tr>
           </thead>
           <tbody>
             {orders.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={8} className="py-8 text-center text-muted-foreground">
                   No orders found for the selected period
                 </td>
               </tr>
             ) : (
               orders.slice(0, 50).map((order, index) => (
-                <tr key={index} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="py-3 px-4 text-sm text-gray-900 dark:text-white font-medium">{order['No. Order']}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{order['Tanggal']} {order['Waktu']}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{order['Sumber']}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{order['Meja']}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">{order['Tamu']}</td>
+                <tr key={index} className="border-b border-border hover:bg-accent/50">
+                  <td className="py-3 px-4 text-sm text-foreground font-medium">{order['No. Order']}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{order['Tanggal']} {order['Waktu']}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{order['Sumber']}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{order['Meja']}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{order['Tamu']}</td>
                   <td className="py-3 px-4">
                     <span className={getStatusBadge(order['Status Order'])}>
                       {order['Status Order']}
@@ -139,7 +139,7 @@ export function ReportTable({ activeTab, reportData, isLoading }: ReportTablePro
           </tbody>
         </table>
         {orders.length > 50 && (
-          <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+          <div className="mt-4 text-center text-sm text-muted-foreground">
             Showing first 50 orders. Export to Excel to see all {orders.length} orders.
           </div>
         )}

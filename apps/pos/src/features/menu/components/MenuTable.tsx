@@ -38,12 +38,12 @@ export const MenuTable: React.FC<MenuTableProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="bg-card rounded-lg border border-border">
       {/* Header with Filters and Add Button */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-border">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Filter Tabs */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex bg-muted rounded-lg p-1">
             {menuFilters.map((filter) => (
               <button
                 key={filter.type}
@@ -52,8 +52,8 @@ export const MenuTable: React.FC<MenuTableProps> = ({
                   px-4 py-2 rounded-md text-sm font-medium transition-colors
                   ${
                     activeFilter === filter.type
-                      ? 'bg-white text-red-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-card text-primary shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                   }
                 `}
               >
@@ -65,7 +65,7 @@ export const MenuTable: React.FC<MenuTableProps> = ({
           {/* Add Menu Item Button */}
           <button
             onClick={onAddMenuItem}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Tambah Menu</span>
@@ -77,36 +77,36 @@ export const MenuTable: React.FC<MenuTableProps> = ({
       {/* Desktop Table View */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Item
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 ID
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Stok
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Harga
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Aksi
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-card divide-y divide-border">
             {filteredItems.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50">
+              <tr key={item.id} className="hover:bg-accent/50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-12 w-12">
                       <img
-                        className="h-12 w-12 rounded-lg object-cover bg-gray-100"
+                        className="h-12 w-12 rounded-lg object-cover bg-muted"
                         src={item.image}
                         alt={item.name}
                         onError={(e) => {
@@ -116,25 +116,25 @@ export const MenuTable: React.FC<MenuTableProps> = ({
                       />
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                      <div className="text-sm font-medium text-foreground">{item.name}</div>
                       {item.description && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
+                        <div className="text-sm text-muted-foreground truncate max-w-xs">
                           {item.description}
                         </div>
                       )}
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                   {item.id}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center text-sm text-gray-900">
-                    <Package className="w-4 h-4 mr-1 text-gray-400" />
+                  <div className="flex items-center text-sm text-foreground">
+                    <Package className="w-4 h-4 mr-1 text-muted-foreground" />
                     {item.stock}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                   {formatPrice(item.price)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -143,8 +143,8 @@ export const MenuTable: React.FC<MenuTableProps> = ({
                       inline-flex px-2 py-1 text-xs font-semibold rounded-full
                       ${
                         item.status === 'in-stock'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
                       }
                     `}
                   >
@@ -155,14 +155,14 @@ export const MenuTable: React.FC<MenuTableProps> = ({
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => onEditMenuItem(item)}
-                      className="text-amber-600 hover:text-amber-900 p-1 rounded"
+                      className="text-amber-600 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 p-1 rounded"
                       disabled={isDeleting === item.id}
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => onDeleteMenuItem(item.id)}
-                      className="text-red-600 hover:text-red-900 p-1 rounded disabled:opacity-50"
+                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1 rounded disabled:opacity-50"
                       disabled={isDeleting === item.id}
                     >
                       {isDeleting === item.id ? (
@@ -182,17 +182,17 @@ export const MenuTable: React.FC<MenuTableProps> = ({
       {/* Mobile Card View */}
       <div className="md:hidden">
         {filteredItems.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+          <div className="p-8 text-center text-muted-foreground">
+            <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
             <p>Tidak ada item untuk filter yang dipilih</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-border">
             {filteredItems.map((item) => (
               <div key={item.id} className="p-4">
                 <div className="flex items-start gap-3">
                   <img
-                    className="h-16 w-16 rounded-lg object-cover bg-gray-100 flex-shrink-0"
+                    className="h-16 w-16 rounded-lg object-cover bg-muted flex-shrink-0"
                     src={item.image}
                     alt={item.name}
                     onError={(e) => {
@@ -203,12 +203,12 @@ export const MenuTable: React.FC<MenuTableProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                        <h3 className="text-sm font-medium text-foreground truncate">
                           {item.name}
                         </h3>
-                        <p className="text-xs text-gray-500 mt-1">ID: {item.id}</p>
+                        <p className="text-xs text-muted-foreground mt-1">ID: {item.id}</p>
                         {item.description && (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             {item.description}
                           </p>
                         )}
@@ -216,14 +216,14 @@ export const MenuTable: React.FC<MenuTableProps> = ({
                       <div className="flex items-center gap-1 ml-2">
                         <button
                           onClick={() => onEditMenuItem(item)}
-                          className="text-amber-600 hover:text-amber-900 p-1 rounded"
+                          className="text-amber-600 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 p-1 rounded"
                           disabled={isDeleting === item.id}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => onDeleteMenuItem(item.id)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded disabled:opacity-50"
+                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1 rounded disabled:opacity-50"
                           disabled={isDeleting === item.id}
                         >
                           {isDeleting === item.id ? (
@@ -236,10 +236,10 @@ export const MenuTable: React.FC<MenuTableProps> = ({
                     </div>
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center gap-4">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-foreground">
                           {formatPrice(item.price)}
                         </span>
-                        <div className="flex items-center text-xs text-gray-500">
+                        <div className="flex items-center text-xs text-muted-foreground">
                           <Package className="w-3 h-3 mr-1" />
                           {item.stock}
                         </div>
@@ -249,8 +249,8 @@ export const MenuTable: React.FC<MenuTableProps> = ({
                           inline-flex px-2 py-1 text-xs font-semibold rounded-full
                           ${
                             item.status === 'in-stock'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                              : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
                           }
                         `}
                       >
@@ -267,8 +267,8 @@ export const MenuTable: React.FC<MenuTableProps> = ({
 
       {/* Empty State for Desktop */}
       {filteredItems.length === 0 && (
-        <div className="hidden md:block p-8 text-center text-gray-500">
-          <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+        <div className="hidden md:block p-8 text-center text-muted-foreground">
+          <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
           <p>Tidak ada item untuk filter yang dipilih</p>
         </div>
       )}

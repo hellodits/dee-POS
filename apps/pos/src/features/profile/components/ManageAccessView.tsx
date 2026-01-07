@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Plus, Search, Trash2, Eye, EyeOff, Loader2, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { NewUserFormData, UserPermission } from '../types';
 import { useProfile } from '../hooks/useProfile';
 import { getRoleBadgeColor, getRoleLabel, getPermissionLabel, formatLastLogin } from '../data/profileData';
 
 export function ManageAccessView() {
+  const { t } = useTranslation();
   const { users, addUser, deleteUser, updateUserPermissions, isLoading, fetchUsers } = useProfile();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -36,12 +38,12 @@ export function ManageAccessView() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      setMessage({ type: 'error', text: 'Password tidak cocok' });
+      setMessage({ type: 'error', text: t('profile.passwordMismatch') });
       return;
     }
     
     if (formData.password.length < 6) {
-      setMessage({ type: 'error', text: 'Password minimal 6 karakter' });
+      setMessage({ type: 'error', text: t('profile.passwordTooShort') });
       return;
     }
 
@@ -65,7 +67,7 @@ export function ManageAccessView() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus user ini?')) {
+    if (window.confirm(t('profile.deleteConfirm'))) {
       const result = await deleteUser(userId);
       setMessage({
         type: result.success ? 'success' : 'error',
@@ -94,48 +96,48 @@ export function ManageAccessView() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Kelola Akses</h2>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">Kontrol izin dan level akses pengguna</p>
+          <h2 className="text-xl sm:text-2xl font-semibold text-foreground">{t('profile.manageAccessTitle')}</h2>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">{t('profile.manageAccessSubtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => fetchUsers()}
             disabled={isLoading}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors"
             title="Refresh"
           >
             <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={() => setShowAddForm(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white text-sm sm:text-base rounded-lg hover:bg-red-700 transition-colors"
+            className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-primary text-primary-foreground text-sm sm:text-base rounded-lg hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>Tambah User</span>
+            <span>{t('profile.addUser')}</span>
           </button>
         </div>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Cari user..."
+          placeholder={t('profile.searchUser')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+          className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring transition-colors bg-background text-foreground"
         />
       </div>
 
       {/* Add User Form */}
       {showAddForm && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+        <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h3 className="text-base sm:text-lg font-medium text-gray-900">Tambah User Baru</h3>
+            <h3 className="text-base sm:text-lg font-medium text-foreground">{t('profile.addNewUser')}</h3>
             <button
               onClick={() => setShowAddForm(false)}
-              className="text-gray-400 hover:text-gray-600 text-xl"
+              className="text-muted-foreground hover:text-foreground text-xl"
             >
               ×
             </button>
@@ -144,40 +146,40 @@ export function ManageAccessView() {
           <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nama Depan
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  {t('profile.firstName')}
                 </label>
                 <input
                   type="text"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring transition-colors bg-background text-foreground"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nama Belakang
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  {t('profile.lastName')}
                 </label>
                 <input
                   type="text"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring transition-colors bg-background text-foreground"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  {t('profile.email')}
                 </label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                  className="w-full px-3 py-2 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring transition-colors bg-background text-foreground"
                   required
                 />
               </div>
