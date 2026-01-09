@@ -10,6 +10,7 @@ export interface ITransaction extends Document {
   _id: Types.ObjectId
   order_id: Types.ObjectId
   order_number: string
+  branch_id: Types.ObjectId
   type: TransactionType
   payment_method: PaymentMethod
   amount: number
@@ -32,6 +33,12 @@ const transactionSchema = new Schema<ITransaction>({
   },
   order_number: {
     type: String,
+    required: true,
+    index: true
+  },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
     required: true,
     index: true
   },
@@ -79,9 +86,9 @@ const transactionSchema = new Schema<ITransaction>({
   timestamps: true
 })
 
-// Indexes for reporting queries
-transactionSchema.index({ createdAt: -1 })
-transactionSchema.index({ type: 1, createdAt: -1 })
-transactionSchema.index({ payment_method: 1, createdAt: -1 })
+// Indexes for reporting queries per branch
+transactionSchema.index({ branch_id: 1, createdAt: -1 })
+transactionSchema.index({ branch_id: 1, type: 1, createdAt: -1 })
+transactionSchema.index({ branch_id: 1, payment_method: 1, createdAt: -1 })
 
 export const Transaction = mongoose.model<ITransaction>('Transaction', transactionSchema)

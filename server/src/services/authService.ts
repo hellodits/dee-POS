@@ -6,7 +6,8 @@ interface RegisterData {
   username: string
   email: string
   password: string
-  role?: 'admin' | 'manager' | 'cashier'
+  role?: 'owner' | 'admin' | 'manager' | 'cashier'
+  branch_id?: string
 }
 
 interface LoginData {
@@ -17,6 +18,13 @@ interface LoginData {
 interface AuthResponse {
   user: any
   token: string
+}
+
+// JWT Payload with branch context
+interface JWTPayload {
+  id: string
+  role: string
+  branch_id: string | null
 }
 
 // Mock user storage for when database is not available
@@ -46,15 +54,25 @@ export class AuthService {
     return mongoose.connection.readyState === 1
   }
 
-  private generateToken(userId: string): string {
+  /**
+   * Generate JWT token with user id, role, and branch_id
+   * This enables multi-tenancy security at the token level
+   */
+  private generateToken(userId: string, role: string, branchId: string | null): string {
     const secret = process.env.JWT_SECRET || 'fallback-secret'
     const options = { expiresIn: process.env.JWT_EXPIRE || '30d' } as any
     
-    return jwt.sign({ id: userId }, secret, options)
+    const payload: JWTPayload = {
+      id: userId,
+      role: role,
+      branch_id: branchId
+    }
+    
+    return jwt.sign(payload, secret, options)
   }
 
   async register(data: RegisterData): Promise<AuthResponse> {
-    const { username, email, password, role = 'cashier' } = data
+    const { username, email, password, role = 'cashier', branch_id } = data
 
     if (this.isDatabaseConnected()) {
       // Use real database
@@ -66,14 +84,25 @@ export class AuthService {
           throw new Error('User already exists with this email or username')
         }
 
+        // Validate branch_id for non-owner roles
+        if (role !== 'owner' && !branch_id) {
+          throw new Error('branch_id is required for non-owner roles')
+        }
+
         const user = await User.create({
           username,
           email,
           password,
-          role
+          role,
+          branch_id: role === 'owner' ? undefined : branch_id
         })
 
-        const token = user.getSignedJwtToken()
+        // Generate token with role and branch_id
+        const token = this.generateToken(
+          user._id.toString(),
+          user.role,
+          user.branch_id?.toString() || null
+        )
 
         return {
           user: {
@@ -81,6 +110,7 @@ export class AuthService {
             username: user.username,
             email: user.email,
             role: user.role,
+            branch_id: user.branch_id,
             permissions: user.permissions,
             isActive: user.isActive,
             createdAt: user.createdAt,
@@ -88,7 +118,11 @@ export class AuthService {
           },
           token
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Re-throw validation errors
+        if (error.message.includes('branch_id') || error.message.includes('already exists')) {
+          throw error
+        }
         console.log('Database operation failed, falling back to mock storage')
       }
     }
@@ -108,6 +142,7 @@ export class AuthService {
       email,
       password: hashedPassword,
       role,
+      branch_id: role === 'owner' ? null : branch_id,
       permissions: {
         can_void: false,
         can_discount: false,
@@ -122,7 +157,7 @@ export class AuthService {
     }
 
     mockUsers.push(newUser)
-    const token = this.generateToken(newUser.id)
+    const token = this.generateToken(newUser.id, newUser.role, newUser.branch_id ?? null)
 
     const { password: _, ...userWithoutPassword } = newUser
 
@@ -164,7 +199,12 @@ export class AuthService {
         user.lastLogin = new Date()
         await user.save()
 
-        const token = user.getSignedJwtToken()
+        // Generate token with role and branch_id for multi-tenancy
+        const token = this.generateToken(
+          user._id.toString(),
+          user.role,
+          user.branch_id?.toString() ?? null
+        )
 
         return {
           user: {
@@ -172,6 +212,7 @@ export class AuthService {
             username: user.username,
             email: user.email,
             role: user.role,
+            branch_id: user.branch_id,
             permissions: user.permissions,
             isActive: user.isActive,
             lastLogin: user.lastLogin,
@@ -207,7 +248,8 @@ export class AuthService {
     user.lastLogin = new Date()
     user.updatedAt = new Date()
 
-    const token = this.generateToken(user.id)
+    // Generate token with role and branch_id
+    const token = this.generateToken(user.id, user.role, user.branch_id)
     const { password: _, ...userWithoutPassword } = user
 
     return {
@@ -221,7 +263,7 @@ export class AuthService {
       try {
         const { User } = await import('../models/User')
         
-        const user = await User.findById(userId)
+        const user = await User.findById(userId).populate('branch_id', 'name address phone')
         if (!user) {
           throw new Error('User not found')
         }
@@ -235,6 +277,7 @@ export class AuthService {
           address: user.address,
           avatar: user.avatar,
           role: user.role,
+          branch_id: user.branch_id,
           permissions: user.permissions,
           isActive: user.isActive,
           lastLogin: user.lastLogin,

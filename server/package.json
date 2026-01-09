@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "seed": "ts-node src/scripts/seed.ts",
+    "seed:multi-branch": "ts-node src/scripts/seedMultiBranch.ts",
+    "debug:login": "ts-node src/scripts/debugLogin.ts",
     "lint": "eslint src/**/*.ts",
     "test": "jest"
   },

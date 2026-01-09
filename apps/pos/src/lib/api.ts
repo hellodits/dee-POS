@@ -27,7 +27,8 @@ export interface AuthResponse {
     lastName?: string
     address?: string
     avatar?: string
-    role: 'admin' | 'manager' | 'cashier'
+    role: 'owner' | 'admin' | 'manager' | 'cashier' | 'kitchen'
+    branch_id?: string | { _id: string; name: string; address: string; phone: string }
     permissions: {
       can_void: boolean
       can_discount: boolean
@@ -60,7 +61,7 @@ const api: AxiosInstance = axios.create({
   },
 })
 
-// Request interceptor - Auto-attach JWT token
+// Request interceptor - Auto-attach JWT token & Branch ID
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem(TOKEN_KEY)
@@ -68,6 +69,27 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // 🔐 MULTI-TENANCY: Inject branch_id for OWNER users
+    const user = auth.getUser()
+    if (user?.role === 'owner') {
+      // OWNER: Use selected branch from localStorage
+      const storedBranch = localStorage.getItem('pos_active_branch')
+      if (storedBranch) {
+        try {
+          const branch = JSON.parse(storedBranch)
+          if (branch._id) {
+            config.params = {
+              ...config.params,
+              branch_id: branch._id
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse stored branch:', e)
+        }
+      }
+    }
+    // Non-OWNER users: branch_id comes from JWT token (handled by backend)
     
     // If sending FormData, let axios set the Content-Type automatically
     // This is important for multipart/form-data with proper boundary
@@ -469,4 +491,30 @@ export const usersApi = {
   
   updatePermissions: (id: string, permissions: Record<string, boolean>) => 
     api.patch<ApiResponse>(`/users/${id}/permissions`, { permissions }),
+}
+
+// Branch type
+export interface Branch {
+  _id: string
+  name: string
+  address: string
+  phone: string
+  is_active: boolean
+}
+
+export const branchesApi = {
+  getAll: (params?: { active_only?: string }) => 
+    api.get<ApiResponse<Branch[]>>('/branches', { params }),
+  
+  getById: (id: string) => 
+    api.get<ApiResponse<Branch>>(`/branches/${id}`),
+  
+  create: (data: { name: string; address: string; phone: string }) => 
+    api.post<ApiResponse<Branch>>('/branches', data),
+  
+  update: (id: string, data: Partial<{ name: string; address: string; phone: string; is_active: boolean }>) => 
+    api.put<ApiResponse<Branch>>(`/branches/${id}`, data),
+  
+  delete: (id: string) => 
+    api.delete<ApiResponse>(`/branches/${id}`),
 }

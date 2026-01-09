@@ -9,15 +9,18 @@ import {
   voidOrder 
 } from '../services/orderService'
 import { emitNewOrder, emitOrderStatusUpdate } from '../config/socket'
-import mongoose from 'mongoose'
+import { AuthRequest, getBranchFilter, getUserBranchId } from '../middleware/auth'
 
 /**
  * @desc    Create new order
  * @route   POST /api/orders
  * @access  Public (WEB) / Private (POS)
+ * 
+ * MULTI-TENANCY: branch_id is automatically assigned from user's token
+ * Client CANNOT specify branch_id in body (prevents spoofing)
  */
 export const createOrderHandler = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
@@ -56,7 +59,33 @@ export const createOrderHandler = async (
     }
 
     // Get user_id from auth middleware (POS orders)
-    const user_id = (req as any).user?.id
+    const user_id = req.user?.id
+
+    // 🔐 MULTI-TENANCY: Get branch_id from authenticated user
+    // For POS orders, branch_id comes from user's token
+    // For WEB orders (public), branch_id must be provided in query param
+    let branch_id: string | undefined
+    
+    if (req.user) {
+      // Authenticated user - get branch from token (prevents spoofing)
+      try {
+        branch_id = getUserBranchId(req).toString()
+      } catch (error: any) {
+        return res.status(400).json({
+          success: false,
+          error: error.message
+        })
+      }
+    } else if (order_source === 'WEB') {
+      // Public WEB order - branch_id must be in query param
+      branch_id = req.query.branch_id as string
+      if (!branch_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'branch_id query parameter is required for WEB orders'
+        })
+      }
+    }
 
     // Try transaction-based creation first, fallback to non-transaction
     let order
@@ -65,6 +94,7 @@ export const createOrderHandler = async (
         order_source,
         table_id,
         user_id,
+        branch_id, // 🔐 Pass branch_id to service
         guest_info,
         items,
         notes,
@@ -78,6 +108,7 @@ export const createOrderHandler = async (
           order_source,
           table_id,
           user_id,
+          branch_id, // 🔐 Pass branch_id to service
           guest_info,
           items,
           notes,
@@ -99,6 +130,7 @@ export const createOrderHandler = async (
       order_id: order._id.toString(),
       order_number: order.order_number,
       order_source: order.order_source,
+      branch_id: order.branch_id?.toString(), // Include branch for filtering
       table_number: tableInfo?.number,
       table_name: tableInfo?.name,
       guest_name: order.guest_info?.name,
@@ -137,9 +169,13 @@ export const createOrderHandler = async (
  * @desc    Get all orders with filters
  * @route   GET /api/orders
  * @access  Private (POS)
+ * 
+ * MULTI-TENANCY:
+ * - OWNER: Can view all branches or filter by ?branch_id=xxx
+ * - Others: Strictly filtered to their assigned branch
  */
 export const getOrders = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
@@ -155,8 +191,19 @@ export const getOrders = async (
       limit = 20 
     } = req.query
 
-    // Build filter
-    const filter: any = {}
+    // 🔐 MULTI-TENANCY: Get branch filter based on user role
+    let branchFilter: any
+    try {
+      branchFilter = getBranchFilter(req)
+    } catch (error: any) {
+      return res.status(403).json({
+        success: false,
+        error: error.message
+      })
+    }
+
+    // Build filter with branch constraint
+    const filter: any = { ...branchFilter }
     
     if (status) filter.status = status
     if (payment_status) filter.payment_status = payment_status
@@ -175,6 +222,7 @@ export const getOrders = async (
       Order.find(filter)
         .populate('table_id', 'number name')
         .populate('user_id', 'username')
+        .populate('branch_id', 'name') // Include branch info
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),
@@ -201,16 +249,35 @@ export const getOrders = async (
  * @desc    Get single order
  * @route   GET /api/orders/:id
  * @access  Private (POS) / Public (WEB - own order)
+ * 
+ * MULTI-TENANCY: Validates user can access this order's branch
  */
 export const getOrder = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
-    const order = await Order.findById(req.params.id)
+    // 🔐 MULTI-TENANCY: Get branch filter
+    let branchFilter: any = {}
+    if (req.user) {
+      try {
+        branchFilter = getBranchFilter(req)
+      } catch (error: any) {
+        return res.status(403).json({
+          success: false,
+          error: error.message
+        })
+      }
+    }
+
+    const order = await Order.findOne({ 
+      _id: req.params.id,
+      ...branchFilter // 🔐 Enforce branch access
+    })
       .populate('table_id', 'number name')
       .populate('user_id', 'username')
+      .populate('branch_id', 'name')
 
     if (!order) {
       return res.status(404).json({
@@ -241,7 +308,8 @@ export const trackOrder = async (
 ) => {
   try {
     const order = await Order.findOne({ order_number: req.params.orderNumber })
-      .select('order_number status items.name items.qty financials createdAt')
+      .select('order_number status items.name items.qty financials createdAt branch_id')
+      .populate('branch_id', 'name')
 
     if (!order) {
       return res.status(404).json({
@@ -264,9 +332,11 @@ export const trackOrder = async (
  * @desc    Update order status
  * @route   PATCH /api/orders/:id/status
  * @access  Private (POS)
+ * 
+ * MULTI-TENANCY: Validates user can access this order's branch
  */
 export const updateStatus = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
@@ -281,11 +351,33 @@ export const updateStatus = async (
       })
     }
 
-    // Get previous status for notification
-    const previousOrder = await Order.findById(req.params.id)
-    const previousStatus = previousOrder?.status || 'UNKNOWN'
+    // 🔐 MULTI-TENANCY: Verify order belongs to user's branch
+    let branchFilter: any
+    try {
+      branchFilter = getBranchFilter(req)
+    } catch (error: any) {
+      return res.status(403).json({
+        success: false,
+        error: error.message
+      })
+    }
 
-    const user_id = (req as any).user?.id
+    // Check order exists and belongs to user's branch
+    const existingOrder = await Order.findOne({
+      _id: req.params.id,
+      ...branchFilter
+    })
+
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found or access denied'
+      })
+    }
+
+    const previousStatus = existingOrder.status
+
+    const user_id = req.user?.id
     const order = await updateOrderStatus(req.params.id, status, user_id)
 
     if (!order) {
@@ -299,6 +391,7 @@ export const updateStatus = async (
     emitOrderStatusUpdate({
       order_id: order._id.toString(),
       order_number: order.order_number,
+      branch_id: order.branch_id?.toString(),
       status: order.status,
       previous_status: previousStatus,
       updated_at: new Date().toISOString()
@@ -318,9 +411,11 @@ export const updateStatus = async (
  * @desc    Process payment
  * @route   POST /api/orders/:id/pay
  * @access  Private (POS)
+ * 
+ * MULTI-TENANCY: Validates user can access this order's branch
  */
 export const payOrder = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
@@ -343,7 +438,31 @@ export const payOrder = async (
       })
     }
 
-    const user_id = (req as any).user?.id
+    // 🔐 MULTI-TENANCY: Verify order belongs to user's branch
+    let branchFilter: any
+    try {
+      branchFilter = getBranchFilter(req)
+    } catch (error: any) {
+      return res.status(403).json({
+        success: false,
+        error: error.message
+      })
+    }
+
+    // Check order exists and belongs to user's branch
+    const existingOrder = await Order.findOne({
+      _id: req.params.id,
+      ...branchFilter
+    })
+
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found or access denied'
+      })
+    }
+
+    const user_id = req.user?.id
     const { order, transaction } = await processPayment(req.params.id, payment_method, amount, user_id)
 
     if (!order) {
@@ -377,24 +496,50 @@ export const payOrder = async (
  * @desc    Void order (cancel and restore stock)
  * @route   POST /api/orders/:id/void
  * @access  Private (POS - requires can_void permission)
+ * 
+ * MULTI-TENANCY: Validates user can access this order's branch
  */
 export const voidOrderHandler = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
-    const user = (req as any).user
+    const user = req.user
 
     // Check permission
-    if (!user?.permissions?.can_void && user?.role !== 'admin') {
+    if (!user?.permissions?.can_void && user?.role !== 'admin' && user?.role !== 'owner') {
       return res.status(403).json({
         success: false,
         error: 'You do not have permission to void orders'
       })
     }
 
-    const order = await voidOrder(req.params.id, user.id)
+    // 🔐 MULTI-TENANCY: Verify order belongs to user's branch
+    let branchFilter: any
+    try {
+      branchFilter = getBranchFilter(req)
+    } catch (error: any) {
+      return res.status(403).json({
+        success: false,
+        error: error.message
+      })
+    }
+
+    // Check order exists and belongs to user's branch
+    const existingOrder = await Order.findOne({
+      _id: req.params.id,
+      ...branchFilter
+    })
+
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found or access denied'
+      })
+    }
+
+    const order = await voidOrder(req.params.id, user!.id)
 
     if (!order) {
       return res.status(404).json({
@@ -418,18 +563,33 @@ export const voidOrderHandler = async (
  * @desc    Get active orders for kitchen display
  * @route   GET /api/orders/kitchen
  * @access  Private (POS)
+ * 
+ * MULTI-TENANCY: Filtered to user's branch
  */
 export const getKitchenOrders = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
+    // 🔐 MULTI-TENANCY: Get branch filter
+    let branchFilter: any
+    try {
+      branchFilter = getBranchFilter(req)
+    } catch (error: any) {
+      return res.status(403).json({
+        success: false,
+        error: error.message
+      })
+    }
+
     const orders = await Order.find({
+      ...branchFilter, // 🔐 Enforce branch access
       status: { $in: ['CONFIRMED', 'COOKING'] }
     })
-    .select('order_number status items.name items.qty items.note table_id createdAt')
+    .select('order_number status items.name items.qty items.note table_id branch_id createdAt')
     .populate('table_id', 'number')
+    .populate('branch_id', 'name')
     .sort({ createdAt: 1 })
 
     res.json({

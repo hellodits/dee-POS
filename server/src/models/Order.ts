@@ -51,6 +51,7 @@ export interface IOrder extends Document {
   payment_method?: PaymentMethod
   table_id?: Types.ObjectId
   user_id?: Types.ObjectId // Cashier who created the order (POS)
+  branch_id: Types.ObjectId
   guest_info?: IGuestInfo
   items: IOrderItem[]
   financials: IFinancials
@@ -127,6 +128,12 @@ const orderSchema = new Schema<IOrder>({
     type: Schema.Types.ObjectId,
     ref: 'User'
   },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    index: true
+  },
   guest_info: {
     type: guestInfoSchema
   },
@@ -154,9 +161,9 @@ const orderSchema = new Schema<IOrder>({
 })
 
 // Indexes for common queries
-orderSchema.index({ createdAt: -1 })
-orderSchema.index({ status: 1, createdAt: -1 })
-orderSchema.index({ table_id: 1, status: 1 })
+orderSchema.index({ branch_id: 1, createdAt: -1 })
+orderSchema.index({ branch_id: 1, status: 1, createdAt: -1 })
+orderSchema.index({ branch_id: 1, table_id: 1, status: 1 })
 
 // Generate order number before save
 orderSchema.pre('save', async function(next) {
@@ -165,7 +172,7 @@ orderSchema.pre('save', async function(next) {
     const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
     const prefix = this.order_source === 'POS' ? 'POS' : 'WEB'
     
-    // Count today's orders for sequential numbering
+    // Count today's orders for sequential numbering (per branch)
     const startOfDay = new Date()
     startOfDay.setHours(0, 0, 0, 0)
     const endOfDay = new Date()
@@ -173,6 +180,7 @@ orderSchema.pre('save', async function(next) {
     
     const Order = mongoose.model('Order')
     const count = await Order.countDocuments({
+      branch_id: this.branch_id,
       createdAt: { $gte: startOfDay, $lte: endOfDay }
     })
     

@@ -8,6 +8,7 @@ export interface ITable extends Document {
   name?: string
   capacity: number
   status: TableStatus
+  branch_id: Types.ObjectId
   current_order_id?: Types.ObjectId
   reserved_by?: {
     name: string
@@ -23,7 +24,6 @@ const tableSchema = new Schema<ITable>({
   number: {
     type: Number,
     required: [true, 'Table number is required'],
-    unique: true,
     min: [1, 'Table number must be at least 1']
   },
   name: {
@@ -43,6 +43,12 @@ const tableSchema = new Schema<ITable>({
     default: 'Available',
     index: true
   },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    index: true
+  },
   current_order_id: {
     type: Schema.Types.ObjectId,
     ref: 'Order'
@@ -56,5 +62,8 @@ const tableSchema = new Schema<ITable>({
 }, {
   timestamps: true
 })
+
+// Compound unique index - table number must be unique per branch
+tableSchema.index({ branch_id: 1, number: 1 }, { unique: true })
 
 export const Table = mongoose.model<ITable>('Table', tableSchema)

@@ -11,7 +11,9 @@ import { OrdersPage } from '@/features/orders/components'
 import { NotificationPage } from '@/features/notifications/components'
 import { ProfilePage } from '@/features/profile/components'
 import { ReportsPage } from '@/features/reports/components'
+import { BranchesPage } from '@/features/branches/components'
 import { auth } from '@/lib/api'
+import { BranchProvider } from '@/contexts/BranchContext'
 
 export function DashboardLayout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -59,139 +61,151 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Floating Sidebar */}
-      <Sidebar 
-        isCollapsed={isSidebarCollapsed}
-        isMobileMenuOpen={isMobileMenuOpen}
-        isMobile={isMobile}
-        onCloseMobileMenu={closeMobileMenu}
-        onToggleSidebar={toggleSidebar}
-      />
-      
-      {/* Main Content */}
-      <div className={`
-        min-h-screen transition-all duration-300 ease-in-out
-        ${isMobile 
-          ? 'ml-0' 
-          : isSidebarCollapsed 
-            ? 'ml-24' 
-            : 'ml-72'
-        }
-      `}>
-        <Routes>
-          <Route 
-            path="/" 
-            element={
-              <DashboardPage 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/menu" 
-            element={
-              <MenuPage 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/staff" 
-            element={
-              <StaffPage 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/staff/:id" 
-            element={
-              <StaffDetail 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/inventory" 
-            element={
-              <InventoryPage 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/reservation" 
-            element={
-              <ReservationPage 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/reservation/:id" 
-            element={
-              <ReservationDetail 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/orders" 
-            element={
-              <OrdersPage 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/notifications" 
-            element={
-              <NotificationPage 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/profile" 
-            element={
-              <ProfilePage 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-          <Route 
-            path="/reports" 
-            element={
-              <ReportsPage 
-                isSidebarCollapsed={isSidebarCollapsed}
-                isMobile={isMobile}
-                onToggleSidebar={toggleSidebar}
-              />
-            } 
-          />
-        </Routes>
+    <BranchProvider>
+      <div className="min-h-screen bg-background relative">
+        {/* Floating Sidebar */}
+        <Sidebar 
+          isCollapsed={isSidebarCollapsed}
+          isMobileMenuOpen={isMobileMenuOpen}
+          isMobile={isMobile}
+          onCloseMobileMenu={closeMobileMenu}
+          onToggleSidebar={toggleSidebar}
+        />
+        
+        {/* Main Content */}
+        <div className={`
+          min-h-screen transition-all duration-300 ease-in-out
+          ${isMobile 
+            ? 'ml-0' 
+            : isSidebarCollapsed 
+              ? 'ml-24' 
+              : 'ml-72'
+          }
+        `}>
+          <Routes>
+            <Route 
+              path="/" 
+              element={
+                <DashboardPage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/menu" 
+              element={
+                <MenuPage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/staff" 
+              element={
+                <StaffPage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/staff/:id" 
+              element={
+                <StaffDetail 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/inventory" 
+              element={
+                <InventoryPage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/reservation" 
+              element={
+                <ReservationPage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/reservation/:id" 
+              element={
+                <ReservationDetail 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/orders" 
+              element={
+                <OrdersPage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/notifications" 
+              element={
+                <NotificationPage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProfilePage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/reports" 
+              element={
+                <ReportsPage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+            <Route 
+              path="/branches" 
+              element={
+                <BranchesPage 
+                  isSidebarCollapsed={isSidebarCollapsed}
+                  isMobile={isMobile}
+                  onToggleSidebar={toggleSidebar}
+                />
+              } 
+            />
+          </Routes>
+        </div>
       </div>
-    </div>
+    </BranchProvider>
   )
 }

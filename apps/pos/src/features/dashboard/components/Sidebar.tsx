@@ -10,11 +10,13 @@ import {
   ShoppingCart,
   LogOut,
   X,
-  PanelLeftClose
+  PanelLeftClose,
+  Building2
 } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ui/theme-switcher'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
 import { auth } from '@/lib/auth'
+import { auth as authApi } from '@/lib/api'
 
 interface SidebarProps {
   isCollapsed: boolean
@@ -34,6 +36,7 @@ export function Sidebar({
   const { t } = useTranslation()
   const location = useLocation()
   const navigate = useNavigate()
+  const user = authApi.getUser()
 
   const menuItems = [
     { icon: LayoutDashboard, label: t('navigation.dashboard'), path: '/' },
@@ -43,6 +46,8 @@ export function Sidebar({
     { icon: FileText, label: t('navigation.reports'), path: '/reports' },
     { icon: ShoppingCart, label: t('navigation.orderTable'), path: '/orders' },
     { icon: Calendar, label: t('navigation.reservation'), path: '/reservation' },
+    // Only show Branches menu for OWNER
+    ...(user?.role === 'owner' ? [{ icon: Building2, label: t('branches.title'), path: '/branches' }] : []),
   ]
 
   const isActive = (path: string) => {

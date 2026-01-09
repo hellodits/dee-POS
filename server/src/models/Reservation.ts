@@ -11,6 +11,7 @@ export interface IReservation extends Document {
   time: string // "19:00" format
   pax: number
   status: ReservationStatus
+  branch_id: Types.ObjectId
   table_id?: Types.ObjectId
   notes?: string
   admin_notes?: string
@@ -59,6 +60,12 @@ const reservationSchema = new Schema<IReservation>({
     default: 'PENDING',
     index: true
   },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    index: true
+  },
   table_id: {
     type: Schema.Types.ObjectId,
     ref: 'Table'
@@ -82,8 +89,8 @@ const reservationSchema = new Schema<IReservation>({
   timestamps: true
 })
 
-// Compound index for date-based queries
-reservationSchema.index({ date: 1, time: 1 })
-reservationSchema.index({ status: 1, date: 1 })
+// Compound index for date-based queries per branch
+reservationSchema.index({ branch_id: 1, date: 1, time: 1 })
+reservationSchema.index({ branch_id: 1, status: 1, date: 1 })
 
 export const Reservation = mongoose.model<IReservation>('Reservation', reservationSchema)

@@ -1,5 +1,6 @@
 // Export all models from a single entry point
 export { User, IUser, IPermissions } from './User'
+export { Branch, IBranch } from './Branch'
 export { Product, IProduct, IProductAttribute } from './Product'
 export { Table, ITable, TableStatus } from './Table'
 export { 

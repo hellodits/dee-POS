@@ -8,6 +8,7 @@ export interface OrderNotification {
   order_id: string
   order_number: string
   order_source: 'POS' | 'WEB'
+  branch_id?: string // 🔐 Multi-tenancy: For filtering notifications by branch
   table_number?: number
   table_name?: string
   guest_name?: string
@@ -20,6 +21,7 @@ export interface OrderNotification {
 export interface OrderStatusUpdate {
   order_id: string
   order_number: string
+  branch_id?: string // 🔐 Multi-tenancy: For filtering notifications by branch
   status: string
   previous_status: string
   updated_at: string

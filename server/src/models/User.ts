@@ -21,7 +21,8 @@ export interface IUser extends Document {
   lastName?: string
   address?: string
   avatar?: string
-  role: 'admin' | 'manager' | 'cashier' | 'kitchen'
+  role: 'owner' | 'admin' | 'manager' | 'cashier' | 'kitchen'
+  branch_id?: Types.ObjectId // null for OWNER role (access to all branches)
   permissions: IPermissions
   isActive: boolean
   lastLogin?: Date
@@ -85,8 +86,16 @@ const userSchema = new Schema<IUser>({
   },
   role: {
     type: String,
-    enum: ['admin', 'manager', 'cashier', 'kitchen'],
+    enum: ['owner', 'admin', 'manager', 'cashier', 'kitchen'],
     default: 'cashier'
+  },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: function(this: IUser) {
+      return this.role !== 'owner' // Only OWNER can have null branch_id
+    },
+    index: true
   },
   permissions: {
     type: permissionsSchema,
@@ -114,6 +123,16 @@ const userSchema = new Schema<IUser>({
 userSchema.pre('save', function(next) {
   if (this.isNew || this.isModified('role')) {
     switch (this.role) {
+      case 'owner':
+        this.permissions = {
+          can_void: true,
+          can_discount: true,
+          can_see_report: true,
+          can_manage_inventory: true,
+          can_manage_users: true,
+          can_manage_tables: true
+        }
+        break
       case 'admin':
         this.permissions = {
           can_void: true,

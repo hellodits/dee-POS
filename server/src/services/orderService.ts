@@ -12,9 +12,9 @@ const TAX_RATE = 0.1
 const SERVICE_CHARGE_RATE = 0.05
 
 /**
- * Generate unique order number
+ * Generate unique order number (per branch)
  */
-async function generateOrderNumber(orderSource: OrderSource): Promise<string> {
+async function generateOrderNumber(orderSource: OrderSource, branchId?: string): Promise<string> {
   const today = new Date()
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
   const prefix = orderSource === 'POS' ? 'POS' : 'WEB'
@@ -24,9 +24,15 @@ async function generateOrderNumber(orderSource: OrderSource): Promise<string> {
   const endOfDay = new Date()
   endOfDay.setHours(23, 59, 59, 999)
   
-  const count = await Order.countDocuments({
+  // Count orders per branch per day
+  const filter: any = {
     createdAt: { $gte: startOfDay, $lte: endOfDay }
-  })
+  }
+  if (branchId) {
+    filter.branch_id = new Types.ObjectId(branchId)
+  }
+  
+  const count = await Order.countDocuments(filter)
   
   return `${prefix}-${dateStr}-${String(count + 1).padStart(4, '0')}`
 }
@@ -35,6 +41,7 @@ interface CreateOrderInput {
   order_source: OrderSource
   table_id?: string
   user_id?: string
+  branch_id?: string // 🔐 Multi-tenancy: Required for all orders
   guest_info?: {
     name: string
     whatsapp: string
@@ -128,6 +135,11 @@ async function atomicStockDeduction(
  * Note: Inventory logs are created outside transaction (time-series limitation)
  */
 export async function createOrder(input: CreateOrderInput): Promise<IOrder> {
+  // Validate branch_id is provided
+  if (!input.branch_id) {
+    throw new Error('branch_id is required for creating orders')
+  }
+
   // Use transaction for data consistency (requires replica set)
   const session = await mongoose.startSession()
   let order: IOrder
@@ -137,15 +149,16 @@ export async function createOrder(input: CreateOrderInput): Promise<IOrder> {
   try {
     session.startTransaction()
 
-    // 1. Validate and fetch products
+    // 1. Validate and fetch products (must belong to same branch)
     const productIds = input.items.map(item => new Types.ObjectId(item.product_id))
     const products = await Product.find({ 
       _id: { $in: productIds },
+      branch_id: new Types.ObjectId(input.branch_id), // 🔐 Enforce branch
       is_active: true 
     }).session(session)
 
     if (products.length !== input.items.length) {
-      throw new Error('One or more products not found or inactive')
+      throw new Error('One or more products not found, inactive, or belong to different branch')
     }
 
     // Create product lookup map
@@ -184,13 +197,14 @@ export async function createOrder(input: CreateOrderInput): Promise<IOrder> {
     const total = subtotal + tax + service_charge
 
     // 5. Generate order number and create order
-    const order_number = await generateOrderNumber(input.order_source)
+    const order_number = await generateOrderNumber(input.order_source, input.branch_id)
     
     order = new Order({
       order_number,
       order_source: input.order_source,
       status: 'PENDING',
       payment_status: 'UNPAID',
+      branch_id: new Types.ObjectId(input.branch_id), // 🔐 Set branch
       table_id: input.table_id ? new Types.ObjectId(input.table_id) : undefined,
       user_id: input.user_id ? new Types.ObjectId(input.user_id) : undefined,
       guest_info: input.guest_info,
@@ -235,6 +249,7 @@ export async function createOrder(input: CreateOrderInput): Promise<IOrder> {
       return {
         product_id: new Types.ObjectId(item.product_id),
         product_name: item.name,
+        branch_id: new Types.ObjectId(input.branch_id!), // 🔐 Set branch
         qty_change: -item.qty,
         qty_before: product.stock + item.qty,
         qty_after: product.stock,
@@ -258,15 +273,21 @@ export async function createOrder(input: CreateOrderInput): Promise<IOrder> {
  * For MongoDB instances without replica set support
  */
 export async function createOrderNoTransaction(input: CreateOrderInput): Promise<IOrder> {
-  // 1. Validate products
+  // Validate branch_id is provided
+  if (!input.branch_id) {
+    throw new Error('branch_id is required for creating orders')
+  }
+
+  // 1. Validate products (must belong to same branch)
   const productIds = input.items.map(item => new Types.ObjectId(item.product_id))
   const products = await Product.find({ 
     _id: { $in: productIds },
+    branch_id: new Types.ObjectId(input.branch_id), // 🔐 Enforce branch
     is_active: true 
   })
 
   if (products.length !== input.items.length) {
-    throw new Error('One or more products not found or inactive')
+    throw new Error('One or more products not found, inactive, or belong to different branch')
   }
 
   const productMap = new Map(products.map(p => [p._id.toString(), p]))
@@ -304,13 +325,14 @@ export async function createOrderNoTransaction(input: CreateOrderInput): Promise
   const total = subtotal + tax + service_charge
 
   // 5. Generate order number and create order
-  const order_number = await generateOrderNumber(input.order_source)
+  const order_number = await generateOrderNumber(input.order_source, input.branch_id)
   
   const order = new Order({
     order_number,
     order_source: input.order_source,
     status: 'PENDING',
     payment_status: 'UNPAID',
+    branch_id: new Types.ObjectId(input.branch_id), // 🔐 Set branch
     table_id: input.table_id ? new Types.ObjectId(input.table_id) : undefined,
     user_id: input.user_id ? new Types.ObjectId(input.user_id) : undefined,
     guest_info: input.guest_info,

@@ -17,6 +17,7 @@ export interface IInventoryLog extends Document {
   _id: Types.ObjectId
   product_id: Types.ObjectId
   product_name: string // Snapshot for reporting
+  branch_id: Types.ObjectId
   qty_change: number // Negative for deductions, positive for additions
   qty_before: number
   qty_after: number
@@ -37,6 +38,12 @@ const inventoryLogSchema = new Schema<IInventoryLog>({
   product_name: {
     type: String,
     required: true
+  },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    index: true
   },
   qty_change: {
     type: Number,
@@ -81,7 +88,7 @@ const inventoryLogSchema = new Schema<IInventoryLog>({
   }
 })
 
-// Compound index for product history queries
-inventoryLogSchema.index({ product_id: 1, timestamp: -1 })
+// Compound index for product history queries per branch
+inventoryLogSchema.index({ branch_id: 1, product_id: 1, timestamp: -1 })
 
 export const InventoryLog = mongoose.model<IInventoryLog>('InventoryLog', inventoryLogSchema)

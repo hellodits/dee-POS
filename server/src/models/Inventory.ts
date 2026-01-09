@@ -5,6 +5,7 @@ export interface IInventory extends Document {
   description?: string;
   category: string;
   unit: string; // kg, liter, pcs, etc.
+  branch_id: mongoose.Types.ObjectId;
   current_stock: number;
   min_stock: number; // minimum stock threshold
   max_stock?: number; // maximum stock capacity
@@ -52,6 +53,12 @@ const inventorySchema = new Schema<IInventory>({
     type: String,
     required: true,
     enum: ['kg', 'gram', 'liter', 'ml', 'pcs', 'pack', 'box', 'bottle', 'can']
+  },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    index: true
   },
   current_stock: {
     type: Number,
@@ -120,11 +127,11 @@ inventorySchema.pre('save', function(next) {
   next();
 });
 
-// Indexes for better performance
-inventorySchema.index({ name: 1 });
-inventorySchema.index({ category: 1 });
-inventorySchema.index({ is_active: 1 });
-inventorySchema.index({ current_stock: 1 });
-inventorySchema.index({ expiry_date: 1 });
+// Indexes for better performance per branch
+inventorySchema.index({ branch_id: 1, name: 1 });
+inventorySchema.index({ branch_id: 1, category: 1 });
+inventorySchema.index({ branch_id: 1, is_active: 1 });
+inventorySchema.index({ branch_id: 1, current_stock: 1 });
+inventorySchema.index({ branch_id: 1, expiry_date: 1 });
 
 export const Inventory = mongoose.model<IInventory>('Inventory', inventorySchema);

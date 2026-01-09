@@ -2,6 +2,7 @@ import { Bell, User, Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useNotifications } from '@/features/notifications/hooks/useNotifications'
+import { BranchSelector } from '@/components/BranchSelector'
 
 interface HeaderProps {
   title: string
@@ -45,6 +46,9 @@ export function Header({ title, isMobile, onToggleSidebar }: HeaderProps) {
         </div>
         
         <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Branch Selector */}
+          <BranchSelector />
+          
           {/* Notification Bell */}
           <button 
             onClick={handleNotificationClick}

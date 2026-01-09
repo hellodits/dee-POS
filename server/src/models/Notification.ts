@@ -10,6 +10,7 @@ export interface INotification extends Document {
   message: string
   priority: NotificationPriority
   is_read: boolean
+  branch_id?: Types.ObjectId // null for system-wide notifications
   user_id?: Types.ObjectId // Target user (null = broadcast to all staff)
   reference_id?: string // ID of related entity (order_id, reservation_id, etc)
   reference_type?: string // 'order' | 'reservation' | 'product' etc
@@ -46,6 +47,11 @@ const notificationSchema = new Schema<INotification>({
     default: false,
     index: true
   },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    index: true // null for system-wide notifications
+  },
   user_id: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -67,10 +73,10 @@ const notificationSchema = new Schema<INotification>({
   timestamps: true
 })
 
-// Indexes for common queries
-notificationSchema.index({ createdAt: -1 })
-notificationSchema.index({ user_id: 1, is_read: 1, createdAt: -1 })
-notificationSchema.index({ type: 1, createdAt: -1 })
+// Indexes for common queries per branch
+notificationSchema.index({ branch_id: 1, createdAt: -1 })
+notificationSchema.index({ branch_id: 1, user_id: 1, is_read: 1, createdAt: -1 })
+notificationSchema.index({ branch_id: 1, type: 1, createdAt: -1 })
 
 // Auto-delete old notifications (older than 30 days)
 notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 })

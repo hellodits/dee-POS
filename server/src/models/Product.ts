@@ -19,6 +19,7 @@ export interface IProduct extends Document {
   category: string
   image_url?: string
   is_active: boolean
+  branch_id: Types.ObjectId
   attributes: IProductAttribute[]
   sku?: string
   createdAt: Date
@@ -74,6 +75,12 @@ const productSchema = new Schema<IProduct>({
     default: true,
     index: true // Index for fast filtering by Customer App
   },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    index: true
+  },
   attributes: {
     type: [productAttributeSchema],
     default: []
@@ -87,8 +94,8 @@ const productSchema = new Schema<IProduct>({
   timestamps: true
 })
 
-// Compound index for menu queries (Customer App)
-productSchema.index({ is_active: 1, category: 1 })
+// Compound index for menu queries (Customer App) - now includes branch
+productSchema.index({ branch_id: 1, is_active: 1, category: 1 })
 
 // Text index for search
 productSchema.index({ name: 'text', description: 'text' })

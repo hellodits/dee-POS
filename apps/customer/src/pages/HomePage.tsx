@@ -1,17 +1,54 @@
-import { Link } from "react-router-dom";
-import { Utensils, UtensilsCrossed, CalendarClock, ArrowRight, Clock, MapPin, MessageCircle } from "lucide-react";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Utensils, UtensilsCrossed, CalendarClock, ArrowRight, Clock, MapPin, MessageCircle, Building2 } from "lucide-react";
+import { useBranch } from "../context";
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const { selectedBranch } = useBranch();
+
+  // Redirect to branch selection if no branch selected
+  useEffect(() => {
+    if (!selectedBranch) {
+      navigate('/select-branch');
+    }
+  }, [selectedBranch, navigate]);
+
+  // Don't render if no branch (will redirect)
+  if (!selectedBranch) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <span className="text-white font-bold text-sm">D</span>
+          </div>
+          <p className="text-gray-500">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Floating Header */}
       <div className="px-4 pt-4">
         <div className="bg-white rounded-2xl px-6 py-4 shadow-[0_4px_20px_rgb(0,0,0,0.08)]">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">D</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">D</span>
+              </div>
+              <span className="text-lg font-bold text-red-600">DEEPOS</span>
             </div>
-            <span className="text-lg font-bold text-red-600">DEEPOS</span>
+            
+            {/* Branch Indicator */}
+            <Link 
+              to="/select-branch"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 rounded-full text-xs font-medium text-red-600 hover:bg-red-100 transition-colors"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span className="max-w-[120px] truncate">{selectedBranch.name}</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -111,6 +148,12 @@ export default function HomePage() {
 
       {/* Footer Info */}
       <div className="px-6 pb-8 space-y-3">
+        {/* Current Branch */}
+        <div className="flex items-center justify-center gap-2 text-red-600 font-medium">
+          <Building2 className="w-4 h-4" />
+          <span className="text-sm">{selectedBranch.name}</span>
+        </div>
+        
         {/* Jam Buka */}
         <div className="flex items-center justify-center gap-2 text-gray-500">
           <Clock className="w-4 h-4" />
@@ -120,18 +163,18 @@ export default function HomePage() {
         {/* Alamat */}
         <div className="flex items-center justify-center gap-2 text-gray-500">
           <MapPin className="w-4 h-4" />
-          <span className="text-sm">Jl. Contoh Alamat No. 123, Kota</span>
+          <span className="text-sm text-center">{selectedBranch.address}</span>
         </div>
         
         {/* WhatsApp */}
         <a 
-          href="https://wa.me/6285155285722"
+          href={`https://wa.me/${selectedBranch.phone.replace(/[^0-9]/g, '')}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 text-green-600 hover:text-green-700 transition-colors"
         >
           <MessageCircle className="w-4 h-4" />
-          <span className="text-sm font-medium">0851-5528-5722</span>
+          <span className="text-sm font-medium">{selectedBranch.phone}</span>
         </a>
       </div>
     </div>

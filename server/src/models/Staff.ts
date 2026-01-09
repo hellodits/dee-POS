@@ -6,6 +6,7 @@ export type AttendanceStatus = 'Present' | 'Absent' | 'Half Shift' | 'Leave'
 export interface IStaff extends Document {
   _id: Types.ObjectId
   user_id?: Types.ObjectId // Optional link to User for login
+  branch_id: Types.ObjectId
   fullName: string
   email: string
   phone: string
@@ -40,6 +41,12 @@ const staffSchema = new Schema<IStaff>({
   user_id: {
     type: Schema.Types.ObjectId,
     ref: 'User'
+  },
+  branch_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    index: true
   },
   fullName: {
     type: String,
@@ -124,9 +131,9 @@ staffSchema.pre('save', function(next) {
 })
 
 // Index for search
-staffSchema.index({ fullName: 'text', email: 'text' })
-staffSchema.index({ role: 1 })
-staffSchema.index({ isActive: 1 })
+staffSchema.index({ branch_id: 1, fullName: 'text', email: 'text' })
+staffSchema.index({ branch_id: 1, role: 1 })
+staffSchema.index({ branch_id: 1, isActive: 1 })
 
 const attendanceSchema = new Schema<IAttendance>({
   staff_id: {

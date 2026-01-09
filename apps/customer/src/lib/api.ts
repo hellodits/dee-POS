@@ -24,10 +24,20 @@ export interface Product {
   category: string
   image_url?: string
   is_active: boolean
+  branch_id?: string
   attributes?: {
     name: string
     options: { label: string; price_modifier: number }[]
   }[]
+}
+
+// Branch type
+export interface Branch {
+  _id: string
+  name: string
+  address: string
+  phone: string
+  is_active: boolean
 }
 
 // Table type
@@ -100,11 +110,29 @@ api.interceptors.response.use(
   }
 )
 
-// Request interceptor - Debug logging
+// Request interceptor - Debug logging & Branch ID injection
 api.interceptors.request.use(
   (config) => {
     console.log('API Request:', config.method?.toUpperCase(), config.url)
     console.log('Request Data:', config.data)
+    
+    // 🔐 MULTI-TENANCY: Inject branch_id from localStorage
+    const storedBranch = localStorage.getItem('selected_branch')
+    if (storedBranch) {
+      try {
+        const branch = JSON.parse(storedBranch)
+        if (branch._id) {
+          // Add branch_id to query params
+          config.params = {
+            ...config.params,
+            branch_id: branch._id
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse stored branch:', e)
+      }
+    }
+    
     return config
   },
   (error) => {

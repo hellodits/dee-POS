@@ -15,6 +15,7 @@ import { errorHandler } from './middleware/errorHandler'
 
 // Route imports
 import authRoutes from './routes/authRoutes'
+import branchRoutes from './routes/branchRoutes'
 import productRoutes from './routes/productRoutes'
 import tableRoutes from './routes/tableRoutes'
 import orderRoutes from './routes/orderRoutes'
@@ -85,6 +86,7 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes)
+app.use('/api/branches', branchRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/tables', tableRoutes)
 app.use('/api/orders', orderRoutes)
