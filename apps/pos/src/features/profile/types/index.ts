@@ -7,12 +7,14 @@ export interface UserPermission {
   settings: boolean;
 }
 
+export type UserRole = 'owner' | 'admin' | 'manager' | 'cashier' | 'kitchen';
+
 export interface User {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
-  role: 'admin' | 'manager' | 'cashier';
+  role: UserRole;
   avatar?: string;
   address?: string;
   permissions: UserPermission;
@@ -37,7 +39,7 @@ export interface NewUserFormData {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'admin' | 'manager' | 'cashier';
+  role: UserRole;
   password: string;
   confirmPassword: string;
 }
