@@ -3,12 +3,17 @@ import { InventoryLog } from '../models/InventoryLog'
 import { Product } from '../models/Product'
 import { Transaction } from '../models/Transaction'
 import { Reservation } from '../models/Reservation'
-import { Attendance } from '../models/Staff'
+import { Attendance, Staff } from '../models/Staff'
 import { User } from '../models/User'
+import { Types } from 'mongoose'
 
 interface DateRange {
   start: Date
   end: Date
+}
+
+interface BranchFilter {
+  branch_id?: Types.ObjectId
 }
 
 interface SalesReport {
@@ -45,9 +50,10 @@ interface DailySalesReport {
  * SALES REPORT - Using MongoDB Aggregation Pipeline
  * NOT JS loops - leverages database-level computation
  */
-export async function getSalesReport(dateRange: DateRange): Promise<SalesReport> {
+export async function getSalesReport(dateRange: DateRange, branchFilter: BranchFilter = {}): Promise<SalesReport> {
   const matchStage = {
     $match: {
+      ...branchFilter,
       createdAt: { $gte: dateRange.start, $lte: dateRange.end },
       status: 'COMPLETED',
       payment_status: 'PAID'
@@ -124,11 +130,13 @@ export async function getSalesReport(dateRange: DateRange): Promise<SalesReport>
  */
 export async function getTopSellingProducts(
   dateRange: DateRange, 
-  limit: number = 10
+  limit: number = 10,
+  branchFilter: BranchFilter = {}
 ): Promise<ProductSalesReport[]> {
   const pipeline = await Order.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
         status: 'COMPLETED'
       }
@@ -180,10 +188,11 @@ export async function getTopSellingProducts(
 /**
  * DAILY SALES TREND - Time-based aggregation
  */
-export async function getDailySalesTrend(dateRange: DateRange): Promise<DailySalesReport[]> {
+export async function getDailySalesTrend(dateRange: DateRange, branchFilter: BranchFilter = {}): Promise<DailySalesReport[]> {
   const pipeline = await Order.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
         status: 'COMPLETED',
         payment_status: 'PAID'
@@ -215,10 +224,11 @@ export async function getDailySalesTrend(dateRange: DateRange): Promise<DailySal
 /**
  * HOURLY SALES DISTRIBUTION - Peak hours analysis
  */
-export async function getHourlySalesDistribution(dateRange: DateRange) {
+export async function getHourlySalesDistribution(dateRange: DateRange, branchFilter: BranchFilter = {}) {
   const pipeline = await Order.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
         status: 'COMPLETED'
       }
@@ -249,8 +259,15 @@ export async function getHourlySalesDistribution(dateRange: DateRange) {
  */
 export async function getInventoryMovementReport(
   productId: string,
-  dateRange: DateRange
+  dateRange: DateRange,
+  branchFilter: BranchFilter = {}
 ) {
+  // First verify product belongs to branch
+  const product = await Product.findOne({ _id: productId, ...branchFilter })
+  if (!product) {
+    return []
+  }
+
   const pipeline = await InventoryLog.aggregate([
     {
       $match: {
@@ -281,8 +298,9 @@ export async function getInventoryMovementReport(
 /**
  * LOW STOCK ALERT
  */
-export async function getLowStockProducts(threshold: number = 10) {
+export async function getLowStockProducts(threshold: number = 10, branchFilter: BranchFilter = {}) {
   return Product.find({
+    ...branchFilter,
     is_active: true,
     stock: { $lte: threshold }
   })
@@ -293,10 +311,11 @@ export async function getLowStockProducts(threshold: number = 10) {
 /**
  * CATEGORY PERFORMANCE
  */
-export async function getCategoryPerformance(dateRange: DateRange) {
+export async function getCategoryPerformance(dateRange: DateRange, branchFilter: BranchFilter = {}) {
   const pipeline = await Order.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
         status: 'COMPLETED'
       }
@@ -340,11 +359,12 @@ export async function getCategoryPerformance(dateRange: DateRange) {
  * Uses Transaction collection for accurate financial reporting
  * Aggregation Pipeline - NO JS loops
  */
-export async function getTransactionReport(dateRange: DateRange) {
+export async function getTransactionReport(dateRange: DateRange, branchFilter: BranchFilter = {}) {
   // Total revenue from transactions
   const summary = await Transaction.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end }
       }
     },
@@ -364,6 +384,7 @@ export async function getTransactionReport(dateRange: DateRange) {
   const byPaymentMethod = await Transaction.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
         type: 'SALE'
       }
@@ -390,6 +411,7 @@ export async function getTransactionReport(dateRange: DateRange) {
   const dailyBreakdown = await Transaction.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
         type: 'SALE'
       }
@@ -433,10 +455,11 @@ export async function getTransactionReport(dateRange: DateRange) {
  * CASHIER PERFORMANCE REPORT
  * Track sales by user/cashier
  */
-export async function getCashierPerformance(dateRange: DateRange) {
+export async function getCashierPerformance(dateRange: DateRange, branchFilter: BranchFilter = {}) {
   return Transaction.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
         type: 'SALE',
         user_id: { $exists: true }
@@ -478,11 +501,12 @@ export async function getCashierPerformance(dateRange: DateRange) {
  * RESERVATION REPORT
  * Aggregation for reservation statistics
  */
-export async function getReservationReport(dateRange: DateRange) {
+export async function getReservationReport(dateRange: DateRange, branchFilter: BranchFilter = {}) {
   // Summary by status
   const byStatus = await Reservation.aggregate([
     {
       $match: {
+        ...branchFilter,
         date: { $gte: dateRange.start, $lte: dateRange.end }
       }
     },
@@ -507,6 +531,7 @@ export async function getReservationReport(dateRange: DateRange) {
   const dailyBreakdown = await Reservation.aggregate([
     {
       $match: {
+        ...branchFilter,
         date: { $gte: dateRange.start, $lte: dateRange.end }
       }
     },
@@ -546,6 +571,7 @@ export async function getReservationReport(dateRange: DateRange) {
 
   // Recent reservations list
   const recentReservations = await Reservation.find({
+    ...branchFilter,
     date: { $gte: dateRange.start, $lte: dateRange.end }
   })
   .select('guest_name whatsapp date time pax status createdAt')
@@ -579,16 +605,20 @@ export async function getReservationReport(dateRange: DateRange) {
  * STAFF PERFORMANCE REPORT
  * Combines attendance data with sales performance
  */
-export async function getStaffReport(dateRange: DateRange) {
-  // Get all active staff
-  const staff = await User.find({ isActive: true })
-    .select('username role')
+export async function getStaffReport(dateRange: DateRange, branchFilter: BranchFilter = {}) {
+  // Get all active staff for this branch
+  const staffList = await Staff.find({ ...branchFilter, isActive: true })
+    .select('fullName role')
     .lean()
+
+  // Get staff IDs for this branch
+  const staffIds = staffList.map(s => s._id)
 
   // Get attendance summary per staff
   const attendanceSummary = await Attendance.aggregate([
     {
       $match: {
+        staff_id: { $in: staffIds },
         date: { $gte: dateRange.start, $lte: dateRange.end }
       }
     },
@@ -597,21 +627,21 @@ export async function getStaffReport(dateRange: DateRange) {
         _id: '$staff_id',
         total_days: { $sum: 1 },
         present_days: {
-          $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$status', 'Present'] }, 1, 0] }
         },
         late_days: {
-          $sum: { $cond: [{ $eq: ['$status', 'late'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$status', 'Half Shift'] }, 1, 0] }
         },
         absent_days: {
-          $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$status', 'Absent'] }, 1, 0] }
         },
         total_hours: {
           $sum: {
             $cond: [
-              { $and: ['$check_in', '$check_out'] },
+              { $and: ['$checkIn', '$checkOut'] },
               {
                 $divide: [
-                  { $subtract: ['$check_out', '$check_in'] },
+                  { $subtract: ['$checkOut', '$checkIn'] },
                   3600000 // Convert ms to hours
                 ]
               },
@@ -623,13 +653,21 @@ export async function getStaffReport(dateRange: DateRange) {
     }
   ])
 
-  // Get sales performance per staff (cashier)
+  // Get users for this branch for sales performance
+  const users = await User.find({ ...branchFilter, isActive: true })
+    .select('username role')
+    .lean()
+
+  const userIds = users.map(u => u._id)
+
+  // Get sales performance per user (cashier)
   const salesPerformance = await Transaction.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
         type: 'SALE',
-        user_id: { $exists: true }
+        user_id: { $in: userIds }
       }
     },
     {
@@ -642,12 +680,13 @@ export async function getStaffReport(dateRange: DateRange) {
     }
   ])
 
-  // Get orders handled per staff
+  // Get orders handled per user
   const ordersHandled = await Order.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
-        user_id: { $exists: true }
+        user_id: { $in: userIds }
       }
     },
     {
@@ -658,15 +697,13 @@ export async function getStaffReport(dateRange: DateRange) {
     }
   ])
 
-  // Combine all data
-  const staffReport = staff.map(s => {
+  // Combine staff data
+  const staffReport = staffList.map(s => {
     const attendance = attendanceSummary.find(a => a._id?.toString() === s._id.toString())
-    const sales = salesPerformance.find(sp => sp._id?.toString() === s._id.toString())
-    const orders = ordersHandled.find(o => o._id?.toString() === s._id.toString())
 
     return {
       staff_id: s._id,
-      username: s.username,
+      name: s.fullName,
       role: s.role,
       attendance: {
         total_days: attendance?.total_days || 0,
@@ -674,7 +711,19 @@ export async function getStaffReport(dateRange: DateRange) {
         late_days: attendance?.late_days || 0,
         absent_days: attendance?.absent_days || 0,
         total_hours: Math.round((attendance?.total_hours || 0) * 100) / 100
-      },
+      }
+    }
+  })
+
+  // Combine user data
+  const userReport = users.map(u => {
+    const sales = salesPerformance.find(sp => sp._id?.toString() === u._id.toString())
+    const orders = ordersHandled.find(o => o._id?.toString() === u._id.toString())
+
+    return {
+      user_id: u._id,
+      username: u.username,
+      role: u.role,
       performance: {
         total_orders: orders?.total_orders || 0,
         total_sales: sales?.total_sales || 0,
@@ -686,15 +735,17 @@ export async function getStaffReport(dateRange: DateRange) {
 
   // Summary
   const summary = {
-    total_staff: staff.length,
+    total_staff: staffList.length,
+    total_users: users.length,
     total_hours_worked: staffReport.reduce((sum, s) => sum + s.attendance.total_hours, 0),
-    total_sales: staffReport.reduce((sum, s) => sum + s.performance.total_sales, 0),
-    total_orders: staffReport.reduce((sum, s) => sum + s.performance.total_orders, 0)
+    total_sales: userReport.reduce((sum, u) => sum + u.performance.total_sales, 0),
+    total_orders: userReport.reduce((sum, u) => sum + u.performance.total_orders, 0)
   }
 
   return {
     summary,
-    staff: staffReport
+    staff: staffReport,
+    users: userReport
   }
 }
 
@@ -702,10 +753,11 @@ export async function getStaffReport(dateRange: DateRange) {
  * MONTHLY CHART DATA
  * For revenue/reservation charts by month
  */
-export async function getMonthlyRevenueChart(dateRange: DateRange) {
+export async function getMonthlyRevenueChart(dateRange: DateRange, branchFilter: BranchFilter = {}) {
   const pipeline = await Order.aggregate([
     {
       $match: {
+        ...branchFilter,
         createdAt: { $gte: dateRange.start, $lte: dateRange.end },
         status: 'COMPLETED',
         payment_status: 'PAID'
@@ -742,10 +794,11 @@ export async function getMonthlyRevenueChart(dateRange: DateRange) {
   }))
 }
 
-export async function getMonthlyReservationChart(dateRange: DateRange) {
+export async function getMonthlyReservationChart(dateRange: DateRange, branchFilter: BranchFilter = {}) {
   const pipeline = await Reservation.aggregate([
     {
       $match: {
+        ...branchFilter,
         date: { $gte: dateRange.start, $lte: dateRange.end }
       }
     },

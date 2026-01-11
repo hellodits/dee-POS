@@ -10,13 +10,14 @@ import {
   resetTable,
   getTableSummary
 } from '../controllers/tableController'
-import { protect, authorize } from '../middleware/auth'
+import { protect, authorize, optionalAuth } from '../middleware/auth'
 
 const router = Router()
 
-// Public routes (Customer App)
-router.get('/', getTables)
-router.post('/:id/reserve', reserveTable)
+// Tables require authentication for branch filtering
+// Customer App should use /api/tables?branch_id=xxx with optionalAuth
+router.get('/', optionalAuth, getTables)
+router.post('/:id/reserve', optionalAuth, reserveTable)
 
 // Protected routes (POS)
 router.get('/summary', protect, getTableSummary)

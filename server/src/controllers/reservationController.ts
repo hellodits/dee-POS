@@ -1,15 +1,16 @@
-import { Request, Response, NextFunction } from 'express'
+import { Response, NextFunction } from 'express'
 import { Reservation } from '../models/Reservation'
 import { Table } from '../models/Table'
 import { Types } from 'mongoose'
+import { AuthRequest, getBranchFilter, getUserBranchId } from '../middleware/auth'
 
 /**
  * @desc    Create reservation (Public - Guest submits)
  * @route   POST /api/reservations
- * @access  Public
+ * @access  Private - Auto-assign branch
  */
 export const createReservation = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -25,6 +26,17 @@ export const createReservation = async (
       })
     }
 
+    // Auto-assign branch_id from user's branch
+    let branch_id
+    try {
+      branch_id = getUserBranchId(req, true)
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      })
+    }
+
     // Validate date is not in the past
     const reservationDate = new Date(date)
     const today = new Date()
@@ -37,11 +49,12 @@ export const createReservation = async (
       })
     }
 
-    // Check for duplicate reservation (same phone, same date/time)
+    // Check for duplicate reservation (same phone, same date/time, same branch)
     const existing = await Reservation.findOne({
       whatsapp,
       date: reservationDate,
       time,
+      branch_id,
       status: { $in: ['PENDING', 'APPROVED'] }
     })
 
@@ -60,6 +73,7 @@ export const createReservation = async (
       time,
       pax,
       notes,
+      branch_id,
       status: 'PENDING'
     })
 
@@ -77,17 +91,19 @@ export const createReservation = async (
 /**
  * @desc    Get all reservations (Admin)
  * @route   GET /api/reservations
- * @access  Private (Admin)
+ * @access  Private - Branch filtered
  */
 export const getReservations = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { status, date, page = 1, limit = 20 } = req.query
 
-    const filter: any = {}
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+    const filter: any = { ...branchFilter }
 
     if (status) {
       filter.status = status
@@ -132,21 +148,24 @@ export const getReservations = async (
 /**
  * @desc    Get single reservation
  * @route   GET /api/reservations/:id
- * @access  Private (Admin) / Public (by whatsapp)
+ * @access  Private - Branch filtered
  */
 export const getReservation = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const reservation = await Reservation.findById(req.params.id)
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+    
+    const reservation = await Reservation.findOne({ _id: req.params.id, ...branchFilter })
       .populate('table_id', 'number name capacity')
 
     if (!reservation) {
       return res.status(404).json({
         success: false,
-        error: 'Reservation not found'
+        error: 'Reservation not found or access denied'
       })
     }
 
@@ -163,23 +182,26 @@ export const getReservation = async (
 /**
  * @desc    Approve reservation (Admin assigns table)
  * @route   PATCH /api/reservations/:id/approve
- * @access  Private (Admin)
+ * @access  Private - Branch filtered
  */
 export const approveReservation = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { table_id, admin_notes } = req.body
-    const user = (req as any).user
+    const user = req.user
 
-    const reservation = await Reservation.findById(req.params.id)
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+
+    const reservation = await Reservation.findOne({ _id: req.params.id, ...branchFilter })
 
     if (!reservation) {
       return res.status(404).json({
         success: false,
-        error: 'Reservation not found'
+        error: 'Reservation not found or access denied'
       })
     }
 
@@ -193,12 +215,12 @@ export const approveReservation = async (
     // Validate table if provided
     let table = null
     if (table_id) {
-      table = await Table.findById(table_id)
+      table = await Table.findOne({ _id: table_id, ...branchFilter })
       
       if (!table) {
         return res.status(404).json({
           success: false,
-          error: 'Table not found'
+          error: 'Table not found or access denied'
         })
       }
 
@@ -268,23 +290,26 @@ export const approveReservation = async (
 /**
  * @desc    Reject reservation
  * @route   PATCH /api/reservations/:id/reject
- * @access  Private (Admin)
+ * @access  Private - Branch filtered
  */
 export const rejectReservation = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { admin_notes } = req.body
-    const user = (req as any).user
+    const user = req.user
 
-    const reservation = await Reservation.findById(req.params.id)
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+
+    const reservation = await Reservation.findOne({ _id: req.params.id, ...branchFilter })
 
     if (!reservation) {
       return res.status(404).json({
         success: false,
-        error: 'Reservation not found'
+        error: 'Reservation not found or access denied'
       })
     }
 
@@ -325,10 +350,10 @@ export const rejectReservation = async (
 /**
  * @desc    Get today's reservations
  * @route   GET /api/reservations/today
- * @access  Private (Admin)
+ * @access  Private - Branch filtered
  */
 export const getTodayReservations = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -339,7 +364,11 @@ export const getTodayReservations = async (
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+
     const reservations = await Reservation.find({
+      ...branchFilter,
       date: { $gte: today, $lt: tomorrow },
       status: { $in: ['PENDING', 'APPROVED'] }
     })
@@ -359,17 +388,21 @@ export const getTodayReservations = async (
 /**
  * @desc    Check reservation by WhatsApp (Public)
  * @route   GET /api/reservations/check/:whatsapp
- * @access  Public
+ * @access  Private - Branch filtered
  */
 export const checkReservationByPhone = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { whatsapp } = req.params
 
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+
     const reservations = await Reservation.find({
+      ...branchFilter,
       whatsapp,
       status: { $in: ['PENDING', 'APPROVED'] },
       date: { $gte: new Date() }
@@ -391,23 +424,26 @@ export const checkReservationByPhone = async (
 /**
  * @desc    Cancel reservation (can cancel PENDING or APPROVED)
  * @route   PATCH /api/reservations/:id/cancel
- * @access  Private (Admin)
+ * @access  Private - Branch filtered
  */
 export const cancelReservation = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { admin_notes } = req.body
-    const user = (req as any).user
+    const user = req.user
 
-    const reservation = await Reservation.findById(req.params.id)
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+
+    const reservation = await Reservation.findOne({ _id: req.params.id, ...branchFilter })
 
     if (!reservation) {
       return res.status(404).json({
         success: false,
-        error: 'Reservation not found'
+        error: 'Reservation not found or access denied'
       })
     }
 
@@ -454,20 +490,23 @@ export const cancelReservation = async (
 /**
  * @desc    Delete reservation permanently
  * @route   DELETE /api/reservations/:id
- * @access  Private (Admin)
+ * @access  Private - Branch filtered
  */
 export const deleteReservation = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const reservation = await Reservation.findById(req.params.id)
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+
+    const reservation = await Reservation.findOne({ _id: req.params.id, ...branchFilter })
 
     if (!reservation) {
       return res.status(404).json({
         success: false,
-        error: 'Reservation not found'
+        error: 'Reservation not found or access denied'
       })
     }
 

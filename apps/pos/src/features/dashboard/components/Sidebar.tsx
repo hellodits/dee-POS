@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { ThemeSwitcher } from '@/components/ui/theme-switcher'
 import { LanguageSwitcher } from '@/components/ui/language-switcher'
+import { BranchSelector } from '@/components/BranchSelector'
 import { auth } from '@/lib/auth'
 import { auth as authApi } from '@/lib/api'
 
@@ -105,6 +106,13 @@ export function Sidebar({
             </button>
           </div>
 
+          {/* Branch Selector for OWNER (Mobile) */}
+          {user?.role === 'owner' && (
+            <div className="px-4 py-3 border-b border-border/50">
+              <BranchSelector />
+            </div>
+          )}
+
           {/* Mobile Navigation */}
           <nav className="flex-1 py-6 overflow-y-auto">
             <div className="space-y-2 px-4">
@@ -183,6 +191,13 @@ export function Sidebar({
           </div>
         )}
       </div>
+
+      {/* Branch Selector for OWNER (Desktop) */}
+      {user?.role === 'owner' && !isCollapsed && (
+        <div className="px-4 py-3 border-b border-border/50">
+          <BranchSelector />
+        </div>
+      )}
       
       {/* Navigation Menu */}
       <nav className="flex-1 py-6 overflow-y-auto scrollbar-hide">

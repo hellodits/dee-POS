@@ -343,6 +343,12 @@
     "failedToLoad": "Failed to load branch data",
     "failedToSave": "Failed to save branch",
     "failedToDelete": "Failed to delete branch",
-    "failedToToggle": "Failed to change branch status"
+    "failedToToggle": "Failed to change branch status",
+    "selectBranch": "Select Branch",
+    "noBranchSelected": "Select Branch",
+    "noBranchesAvailable": "No branches available",
+    "allBranches": "All Branches",
+    "switchBranch": "Switch Branch",
+    "currentBranch": "Current Branch"
   }
 }

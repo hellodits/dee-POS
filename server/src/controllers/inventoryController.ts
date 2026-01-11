@@ -1,12 +1,16 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { Inventory } from '../models/Inventory';
 import { InventoryLog } from '../models/InventoryLog';
-import { AuthRequest } from '../middleware/auth';
+import { AuthRequest, getBranchFilter, getUserBranchId } from '../middleware/auth';
 import mongoose from 'mongoose';
 import { uploadToCloudinary } from '../config/cloudinary';
 
-// Get all inventory items
-export const getAllInventory = async (req: Request, res: Response) => {
+/**
+ * @desc    Get all inventory items
+ * @route   GET /api/inventory
+ * @access  Private - Branch filtered
+ */
+export const getAllInventory = async (req: AuthRequest, res: Response) => {
   try {
     const { 
       category, 
@@ -16,8 +20,9 @@ export const getAllInventory = async (req: Request, res: Response) => {
       limit = 50 
     } = req.query;
 
-    // Build filter
-    const filter: any = {};
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req);
+    const filter: any = { ...branchFilter };
     
     if (category && category !== 'all') {
       filter.category = category;
@@ -63,8 +68,12 @@ export const getAllInventory = async (req: Request, res: Response) => {
   }
 };
 
-// Get inventory by ID
-export const getInventoryById = async (req: Request, res: Response) => {
+/**
+ * @desc    Get inventory by ID
+ * @route   GET /api/inventory/:id
+ * @access  Private - Branch filtered
+ */
+export const getInventoryById = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -75,12 +84,15 @@ export const getInventoryById = async (req: Request, res: Response) => {
       });
     }
 
-    const inventory = await Inventory.findById(id);
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req);
+    
+    const inventory = await Inventory.findOne({ _id: id, ...branchFilter });
     
     if (!inventory) {
       return res.status(404).json({
         success: false,
-        error: 'Inventory tidak ditemukan'
+        error: 'Inventory tidak ditemukan atau akses ditolak'
       });
     }
 
@@ -97,10 +109,25 @@ export const getInventoryById = async (req: Request, res: Response) => {
   }
 };
 
-// Create new inventory item
+/**
+ * @desc    Create new inventory item
+ * @route   POST /api/inventory
+ * @access  Private - Auto-assign branch
+ */
 export const createInventory = async (req: AuthRequest, res: Response) => {
   try {
     const inventoryData = req.body;
+    
+    // Auto-assign branch_id from user's branch
+    let branch_id;
+    try {
+      branch_id = getUserBranchId(req, true);
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
     
     // Parse numeric fields from FormData (they come as strings)
     if (inventoryData.current_stock) {
@@ -119,9 +146,10 @@ export const createInventory = async (req: AuthRequest, res: Response) => {
       inventoryData.is_perishable = inventoryData.is_perishable === 'true';
     }
     
-    // Check if inventory with same name exists
+    // Check if inventory with same name exists in this branch
     const existingInventory = await Inventory.findOne({ 
       name: inventoryData.name,
+      branch_id,
       is_active: true 
     });
     
@@ -155,7 +183,10 @@ export const createInventory = async (req: AuthRequest, res: Response) => {
       console.log('📷 No image file provided for inventory');
     }
 
-    const inventory = new Inventory(inventoryData);
+    const inventory = new Inventory({
+      ...inventoryData,
+      branch_id
+    });
     await inventory.save();
 
     // Log initial stock if > 0
@@ -187,7 +218,11 @@ export const createInventory = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Update inventory item
+/**
+ * @desc    Update inventory item
+ * @route   PUT /api/inventory/:id
+ * @access  Private - Branch filtered
+ */
 export const updateInventory = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -200,14 +235,20 @@ export const updateInventory = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req);
+
     // Get current inventory to check stock change
-    const currentInventory = await Inventory.findById(id);
+    const currentInventory = await Inventory.findOne({ _id: id, ...branchFilter });
     if (!currentInventory) {
       return res.status(404).json({
         success: false,
-        error: 'Inventory tidak ditemukan'
+        error: 'Inventory tidak ditemukan atau akses ditolak'
       });
     }
+    
+    // Remove branch_id from update data - cannot change branch
+    delete updateData.branch_id;
     
     // Parse numeric fields from FormData (they come as strings)
     if (updateData.current_stock !== undefined) {
@@ -255,8 +296,8 @@ export const updateInventory = async (req: AuthRequest, res: Response) => {
       }
     }
     
-    const inventory = await Inventory.findByIdAndUpdate(
-      id,
+    const inventory = await Inventory.findOneAndUpdate(
+      { _id: id, ...branchFilter },
       { ...updateData, updated_at: new Date() },
       { new: true, runValidators: true }
     );
@@ -299,8 +340,12 @@ export const updateInventory = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Delete inventory item
-export const deleteInventory = async (req: Request, res: Response) => {
+/**
+ * @desc    Delete inventory item
+ * @route   DELETE /api/inventory/:id
+ * @access  Private - Branch filtered
+ */
+export const deleteInventory = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -311,12 +356,15 @@ export const deleteInventory = async (req: Request, res: Response) => {
       });
     }
 
-    const inventory = await Inventory.findByIdAndDelete(id);
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req);
+
+    const inventory = await Inventory.findOneAndDelete({ _id: id, ...branchFilter });
     
     if (!inventory) {
       return res.status(404).json({
         success: false,
-        error: 'Inventory tidak ditemukan'
+        error: 'Inventory tidak ditemukan atau akses ditolak'
       });
     }
 
@@ -333,7 +381,11 @@ export const deleteInventory = async (req: Request, res: Response) => {
   }
 };
 
-// Adjust inventory stock
+/**
+ * @desc    Adjust inventory stock
+ * @route   POST /api/inventory/:id/adjust
+ * @access  Private - Branch filtered
+ */
 export const adjustInventoryStock = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -360,12 +412,15 @@ export const adjustInventoryStock = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const inventory = await Inventory.findById(id);
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req);
+
+    const inventory = await Inventory.findOne({ _id: id, ...branchFilter });
     
     if (!inventory) {
       return res.status(404).json({
         success: false,
-        error: 'Inventory tidak ditemukan'
+        error: 'Inventory tidak ditemukan atau akses ditolak'
       });
     }
 
@@ -418,10 +473,20 @@ export const adjustInventoryStock = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Get inventory categories
-export const getInventoryCategories = async (req: Request, res: Response) => {
+/**
+ * @desc    Get inventory categories
+ * @route   GET /api/inventory/categories
+ * @access  Private - Branch filtered
+ */
+export const getInventoryCategories = async (req: AuthRequest, res: Response) => {
   try {
-    const categories = await Inventory.distinct('category', { is_active: true });
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req);
+    
+    const categories = await Inventory.distinct('category', { 
+      ...branchFilter,
+      is_active: true 
+    });
     
     res.json({
       success: true,
@@ -436,14 +501,22 @@ export const getInventoryCategories = async (req: Request, res: Response) => {
   }
 };
 
-// Get low stock items
-export const getLowStockItems = async (req: Request, res: Response) => {
+/**
+ * @desc    Get low stock items
+ * @route   GET /api/inventory/low-stock
+ * @access  Private - Branch filtered
+ */
+export const getLowStockItems = async (req: AuthRequest, res: Response) => {
   try {
     const { threshold } = req.query;
+    
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req);
     
     let lowStockItems;
     if (threshold) {
       lowStockItems = await Inventory.find({
+        ...branchFilter,
         is_active: true,
         current_stock: { $lte: Number(threshold) }
       });
@@ -452,6 +525,7 @@ export const getLowStockItems = async (req: Request, res: Response) => {
       lowStockItems = await Inventory.aggregate([
         {
           $match: {
+            ...branchFilter,
             is_active: true,
             $expr: { $lte: ['$current_stock', '$min_stock'] }
           }
@@ -472,15 +546,23 @@ export const getLowStockItems = async (req: Request, res: Response) => {
   }
 };
 
-// Get expiring items
-export const getExpiringItems = async (req: Request, res: Response) => {
+/**
+ * @desc    Get expiring items
+ * @route   GET /api/inventory/expiring
+ * @access  Private - Branch filtered
+ */
+export const getExpiringItems = async (req: AuthRequest, res: Response) => {
   try {
     const { days = 7 } = req.query;
+    
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req);
     
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + Number(days));
     
     const expiringItems = await Inventory.find({
+      ...branchFilter,
       is_active: true,
       is_perishable: true,
       expiry_date: { $lte: expiryDate, $gte: new Date() }

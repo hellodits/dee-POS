@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction } from 'express'
+import { Response, NextFunction } from 'express'
 import { Order } from '../models/Order'
+import { AuthRequest, getBranchFilter } from '../middleware/auth'
 import {
   getSalesReport,
   getTopSellingProducts,
@@ -19,7 +20,7 @@ import {
 /**
  * Parse date range from query params
  */
-function parseDateRange(req: Request): { start: Date; end: Date } {
+function parseDateRange(req: AuthRequest): { start: Date; end: Date } {
   const { date_from, date_to, period } = req.query
 
   let start: Date
@@ -57,16 +58,17 @@ function parseDateRange(req: Request): { start: Date; end: Date } {
 /**
  * @desc    Get sales report
  * @route   GET /api/reports/sales
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const salesReport = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const report = await getSalesReport(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const report = await getSalesReport(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -85,18 +87,19 @@ export const salesReport = async (
 /**
  * @desc    Get top selling products
  * @route   GET /api/reports/top-products
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const topProducts = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
+    const branchFilter = getBranchFilter(req)
     const limit = Number(req.query.limit) || 10
     
-    const products = await getTopSellingProducts(dateRange, limit)
+    const products = await getTopSellingProducts(dateRange, limit, branchFilter)
 
     res.json({
       success: true,
@@ -115,16 +118,17 @@ export const topProducts = async (
 /**
  * @desc    Get daily sales trend
  * @route   GET /api/reports/daily-trend
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const dailyTrend = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const trend = await getDailySalesTrend(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const trend = await getDailySalesTrend(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -143,16 +147,17 @@ export const dailyTrend = async (
 /**
  * @desc    Get hourly sales distribution
  * @route   GET /api/reports/hourly
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const hourlyDistribution = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const distribution = await getHourlySalesDistribution(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const distribution = await getHourlySalesDistribution(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -171,16 +176,17 @@ export const hourlyDistribution = async (
 /**
  * @desc    Get inventory movement for a product
  * @route   GET /api/reports/inventory/:productId
- * @access  Private (POS - requires can_manage_inventory)
+ * @access  Private - Branch filtered
  */
 export const inventoryMovement = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const movement = await getInventoryMovementReport(req.params.productId, dateRange)
+    const branchFilter = getBranchFilter(req)
+    const movement = await getInventoryMovementReport(req.params.productId, dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -199,16 +205,17 @@ export const inventoryMovement = async (
 /**
  * @desc    Get low stock products
  * @route   GET /api/reports/low-stock
- * @access  Private (POS - requires can_manage_inventory)
+ * @access  Private - Branch filtered
  */
 export const lowStock = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const threshold = Number(req.query.threshold) || 10
-    const products = await getLowStockProducts(threshold)
+    const branchFilter = getBranchFilter(req)
+    const products = await getLowStockProducts(threshold, branchFilter)
 
     res.json({
       success: true,
@@ -224,16 +231,17 @@ export const lowStock = async (
 /**
  * @desc    Get category performance
  * @route   GET /api/reports/categories
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const categoryPerformance = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const performance = await getCategoryPerformance(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const performance = await getCategoryPerformance(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -252,14 +260,16 @@ export const categoryPerformance = async (
 /**
  * @desc    Get dashboard summary
  * @route   GET /api/reports/dashboard
- * @access  Private (POS)
+ * @access  Private - Branch filtered
  */
 export const dashboardSummary = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
+    const branchFilter = getBranchFilter(req)
+    
     // Today's date range
     const today = new Date()
     const startOfDay = new Date(today.setHours(0, 0, 0, 0))
@@ -267,13 +277,13 @@ export const dashboardSummary = async (
     const todayRange = { start: startOfDay, end: endOfDay }
 
     // Get today's sales
-    const todaySales = await getSalesReport(todayRange)
+    const todaySales = await getSalesReport(todayRange, branchFilter)
     
     // Get low stock count
-    const lowStockProducts = await getLowStockProducts(10)
+    const lowStockProducts = await getLowStockProducts(10, branchFilter)
     
     // Get top 5 products today
-    const topProductsToday = await getTopSellingProducts(todayRange, 5)
+    const topProductsToday = await getTopSellingProducts(todayRange, 5, branchFilter)
 
     res.json({
       success: true,
@@ -297,16 +307,17 @@ export const dashboardSummary = async (
 /**
  * @desc    Get transaction-based financial report
  * @route   GET /api/reports/transactions
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const transactionReport = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const report = await getTransactionReport(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const report = await getTransactionReport(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -325,16 +336,17 @@ export const transactionReport = async (
 /**
  * @desc    Get cashier performance report
  * @route   GET /api/reports/cashiers
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const cashierReport = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const report = await getCashierPerformance(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const report = await getCashierPerformance(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -354,16 +366,17 @@ export const cashierReport = async (
 /**
  * @desc    Get reservation report
  * @route   GET /api/reports/reservations
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const reservationReport = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const report = await getReservationReport(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const report = await getReservationReport(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -382,16 +395,17 @@ export const reservationReport = async (
 /**
  * @desc    Get staff performance report
  * @route   GET /api/reports/staff
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const staffReport = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const report = await getStaffReport(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const report = await getStaffReport(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -410,16 +424,17 @@ export const staffReport = async (
 /**
  * @desc    Get monthly revenue chart data
  * @route   GET /api/reports/revenue-chart
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const revenueChart = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const chartData = await getMonthlyRevenueChart(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const chartData = await getMonthlyRevenueChart(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -438,16 +453,17 @@ export const revenueChart = async (
 /**
  * @desc    Get monthly reservation chart data
  * @route   GET /api/reports/reservation-chart
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const reservationChart = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
-    const chartData = await getMonthlyReservationChart(dateRange)
+    const branchFilter = getBranchFilter(req)
+    const chartData = await getMonthlyReservationChart(dateRange, branchFilter)
 
     res.json({
       success: true,
@@ -466,19 +482,21 @@ export const reservationChart = async (
 /**
  * @desc    Export orders to Excel
  * @route   GET /api/reports/export-orders
- * @access  Private (POS - requires can_see_report)
+ * @access  Private - Branch filtered
  */
 export const exportOrders = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const dateRange = parseDateRange(req)
+    const branchFilter = getBranchFilter(req)
     const { status, payment_status, order_source } = req.query
     
     // Build filter
     const filter: any = {
+      ...branchFilter,
       createdAt: { $gte: dateRange.start, $lte: dateRange.end }
     }
     

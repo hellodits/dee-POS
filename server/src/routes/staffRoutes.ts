@@ -33,19 +33,19 @@ router.get('/roles', getStaffRoles)
 router.get('/attendance/today', getTodayAttendance)
 router.post('/attendance/clock-in', clockIn)
 router.post('/attendance/clock-out', clockOut)
-router.get('/attendance', authorize('admin', 'manager'), getAttendance)
-router.post('/attendance', authorize('admin', 'manager'), createAttendance)
-router.put('/attendance/:id', authorize('admin', 'manager'), updateAttendance)
-router.delete('/attendance/:id', authorize('admin', 'manager'), deleteAttendance)
+router.get('/attendance', authorize('owner', 'admin', 'manager'), getAttendance)
+router.post('/attendance', authorize('owner', 'admin', 'manager'), createAttendance)
+router.put('/attendance/:id', authorize('owner', 'admin', 'manager'), updateAttendance)
+router.delete('/attendance/:id', authorize('owner', 'admin', 'manager'), deleteAttendance)
 
 // Staff CRUD routes (dynamic :id routes come last)
-router.get('/', authorize('admin', 'manager'), getStaff)
-router.post('/', authorize('admin', 'manager'), upload.single('profileImage'), createStaff)
-router.get('/:id', authorize('admin', 'manager'), getStaffById)
-router.put('/:id', authorize('admin', 'manager'), (req, res, next) => {
+router.get('/', authorize('owner', 'admin', 'manager'), getStaff)
+router.post('/', authorize('owner', 'admin', 'manager'), upload.single('profileImage'), createStaff)
+router.get('/:id', authorize('owner', 'admin', 'manager'), getStaffById)
+router.put('/:id', authorize('owner', 'admin', 'manager'), (req, res, next) => {
   console.log('🔄 PUT /staff/:id route hit, ID:', req.params.id)
   next()
 }, upload.single('profileImage'), updateStaff)
-router.delete('/:id', authorize('admin', 'manager'), deleteStaff)
+router.delete('/:id', authorize('owner', 'admin'), deleteStaff)
 
 export default router

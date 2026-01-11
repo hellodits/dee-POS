@@ -1,7 +1,8 @@
-import { Request, Response, NextFunction } from 'express'
+import { Response, NextFunction } from 'express'
 import mongoose from 'mongoose'
 import { Staff, Attendance } from '../models/Staff'
 import { uploadToCloudinary } from '../config/cloudinary'
+import { AuthRequest, getBranchFilter, getUserBranchId } from '../middleware/auth'
 
 // Helper to validate MongoDB ObjectId
 const isValidObjectId = (id: string): boolean => {
@@ -12,17 +13,19 @@ const isValidObjectId = (id: string): boolean => {
 /**
  * @desc    Get all staff
  * @route   GET /api/staff
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Branch filtered
  */
 export const getStaff = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { role, search, active_only, page = 1, limit = 50 } = req.query
 
-    const filter: any = {}
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+    const filter: any = { ...branchFilter }
 
     if (role) {
       filter.role = role
@@ -69,10 +72,10 @@ export const getStaff = async (
 /**
  * @desc    Get single staff
  * @route   GET /api/staff/:id
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Branch filtered
  */
 export const getStaffById = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -87,13 +90,16 @@ export const getStaffById = async (
         error: `Invalid staff ID format: ${id}`
       })
     }
+
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
     
-    const staff = await Staff.findById(id)
+    const staff = await Staff.findOne({ _id: id, ...branchFilter })
 
     if (!staff) {
       return res.status(404).json({
         success: false,
-        error: 'Staff not found'
+        error: 'Staff not found or access denied'
       })
     }
 
@@ -110,10 +116,10 @@ export const getStaffById = async (
 /**
  * @desc    Create staff
  * @route   POST /api/staff
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Auto-assign branch
  */
 export const createStaff = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -130,6 +136,17 @@ export const createStaff = async (
       address,
       additionalDetails
     } = req.body
+
+    // Auto-assign branch_id from user's branch
+    let branch_id
+    try {
+      branch_id = getUserBranchId(req, true)
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      })
+    }
 
     // Check if email already exists
     const existingStaff = await Staff.findOne({ email })
@@ -165,6 +182,7 @@ export const createStaff = async (
     }
 
     const staff = await Staff.create({
+      branch_id,
       fullName,
       email,
       phone,
@@ -181,6 +199,7 @@ export const createStaff = async (
     console.log('✅ Staff created:', { 
       _id: staff._id.toString(), 
       fullName: staff.fullName, 
+      branch_id: staff.branch_id,
       profileImage: staff.profileImage 
     })
 
@@ -198,10 +217,10 @@ export const createStaff = async (
 /**
  * @desc    Update staff
  * @route   PUT /api/staff/:id
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Branch filtered
  */
 export const updateStaff = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -224,15 +243,18 @@ export const updateStaff = async (
         error: `Invalid staff ID format: ${cleanId}`
       })
     }
+
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
     
     console.log('📝 Looking for staff with ID:', cleanId)
-    const staff = await Staff.findById(cleanId)
+    const staff = await Staff.findOne({ _id: cleanId, ...branchFilter })
 
     if (!staff) {
       console.log('❌ Staff not found for ID:', cleanId)
       return res.status(404).json({
         success: false,
-        error: 'Staff not found'
+        error: 'Staff not found or access denied'
       })
     }
     
@@ -270,8 +292,11 @@ export const updateStaff = async (
       }
     }
 
-    // Add other fields from request body (excluding invalid ones)
+    // Add other fields from request body (excluding invalid ones and branch_id)
     for (const [key, value] of Object.entries(req.body)) {
+      // Skip branch_id - cannot change branch
+      if (key === 'branch_id') continue
+      
       // Skip empty objects, null, undefined, empty strings
       if (value !== null && value !== undefined && value !== '' && 
           !(typeof value === 'object' && Object.keys(value).length === 0)) {
@@ -295,8 +320,8 @@ export const updateStaff = async (
       })
     }
 
-    const updatedStaff = await Staff.findByIdAndUpdate(
-      cleanId,
+    const updatedStaff = await Staff.findOneAndUpdate(
+      { _id: cleanId, ...branchFilter },
       updateData,
       { new: true, runValidators: true }
     )
@@ -325,10 +350,10 @@ export const updateStaff = async (
 /**
  * @desc    Delete staff
  * @route   DELETE /api/staff/:id
- * @access  Private (Admin)
+ * @access  Private (Admin) - Branch filtered
  */
 export const deleteStaff = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -342,13 +367,16 @@ export const deleteStaff = async (
         error: `Invalid staff ID format: ${id}`
       })
     }
+
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
     
-    const staff = await Staff.findById(id)
+    const staff = await Staff.findOne({ _id: id, ...branchFilter })
 
     if (!staff) {
       return res.status(404).json({
         success: false,
-        error: 'Staff not found'
+        error: 'Staff not found or access denied'
       })
     }
 
@@ -370,7 +398,7 @@ export const deleteStaff = async (
  * @access  Private
  */
 export const getStaffRoles = async (
-  req: Request,
+  _req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -392,19 +420,36 @@ export const getStaffRoles = async (
 /**
  * @desc    Get attendance records
  * @route   GET /api/staff/attendance
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Branch filtered via staff
  */
 export const getAttendance = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { staff_id, date, date_from, date_to, status, page = 1, limit = 500 } = req.query
 
-    const filter: any = {}
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+    
+    // First get staff IDs that belong to user's branch
+    const branchStaff = await Staff.find(branchFilter).select('_id')
+    const branchStaffIds = branchStaff.map(s => s._id)
+
+    const filter: any = {
+      staff_id: { $in: branchStaffIds }
+    }
 
     if (staff_id) {
+      // Verify staff belongs to user's branch
+      if (!branchStaffIds.some(id => id.toString() === staff_id)) {
+        return res.json({
+          success: true,
+          data: [],
+          pagination: { page: 1, limit: Number(limit), total: 0, pages: 0 }
+        })
+      }
       filter.staff_id = staff_id
     }
 
@@ -475,22 +520,25 @@ export const getAttendance = async (
 /**
  * @desc    Create attendance record
  * @route   POST /api/staff/attendance
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Branch filtered
  */
 export const createAttendance = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { staff_id, date, check_in, check_out, status, notes } = req.body
 
-    // Check if staff exists
-    const staff = await Staff.findById(staff_id)
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+
+    // Check if staff exists and belongs to user's branch
+    const staff = await Staff.findOne({ _id: staff_id, ...branchFilter })
     if (!staff) {
       return res.status(404).json({
         success: false,
-        error: 'Staff not found'
+        error: 'Staff not found or access denied'
       })
     }
 
@@ -558,20 +606,30 @@ export const createAttendance = async (
 /**
  * @desc    Update attendance record
  * @route   PUT /api/staff/attendance/:id
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Branch filtered
  */
 export const updateAttendance = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const attendance = await Attendance.findById(req.params.id)
+    const attendance = await Attendance.findById(req.params.id).populate('staff_id')
 
     if (!attendance) {
       return res.status(404).json({
         success: false,
         error: 'Attendance record not found'
+      })
+    }
+
+    // Verify staff belongs to user's branch
+    const branchFilter = getBranchFilter(req)
+    const staff = await Staff.findOne({ _id: attendance.staff_id, ...branchFilter })
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
+        error: 'Attendance record not found or access denied'
       })
     }
 
@@ -626,10 +684,10 @@ export const updateAttendance = async (
 /**
  * @desc    Delete attendance record
  * @route   DELETE /api/staff/attendance/:id
- * @access  Private (Admin)
+ * @access  Private (Admin) - Branch filtered
  */
 export const deleteAttendance = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -640,6 +698,16 @@ export const deleteAttendance = async (
       return res.status(404).json({
         success: false,
         error: 'Attendance record not found'
+      })
+    }
+
+    // Verify staff belongs to user's branch
+    const branchFilter = getBranchFilter(req)
+    const staff = await Staff.findOne({ _id: attendance.staff_id, ...branchFilter })
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
+        error: 'Attendance record not found or access denied'
       })
     }
 
@@ -658,10 +726,10 @@ export const deleteAttendance = async (
 /**
  * @desc    Get today's attendance summary
  * @route   GET /api/staff/attendance/today
- * @access  Private
+ * @access  Private - Branch filtered
  */
 export const getTodayAttendance = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -672,11 +740,19 @@ export const getTodayAttendance = async (
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+    
+    // Get staff IDs that belong to user's branch
+    const branchStaff = await Staff.find({ ...branchFilter, isActive: true }).select('_id')
+    const branchStaffIds = branchStaff.map(s => s._id)
+
     const [attendance, totalStaff] = await Promise.all([
       Attendance.find({
+        staff_id: { $in: branchStaffIds },
         date: { $gte: today, $lt: tomorrow }
       }).populate('staff_id', 'fullName role profileImage'),
-      Staff.countDocuments({ isActive: true })
+      Staff.countDocuments({ ...branchFilter, isActive: true })
     ])
 
     const summary = {
@@ -705,10 +781,10 @@ export const getTodayAttendance = async (
 /**
  * @desc    Quick clock in - record attendance with current time
  * @route   POST /api/staff/attendance/clock-in
- * @access  Private
+ * @access  Private - Branch filtered
  */
 export const clockIn = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -735,13 +811,14 @@ export const clockIn = async (
       })
     }
 
-    // Check if staff exists
-    const staff = await Staff.findById(staff_id)
+    // Check if staff exists and belongs to user's branch
+    const branchFilter = getBranchFilter(req)
+    const staff = await Staff.findOne({ _id: staff_id, ...branchFilter })
     if (!staff) {
-      console.log('❌ Clock-in failed: Staff not found:', staff_id)
+      console.log('❌ Clock-in failed: Staff not found or access denied:', staff_id)
       return res.status(404).json({
         success: false,
-        error: 'Staff not found'
+        error: 'Staff not found or access denied'
       })
     }
     
@@ -808,10 +885,10 @@ export const clockIn = async (
 /**
  * @desc    Quick clock out - update attendance with current time
  * @route   POST /api/staff/attendance/clock-out
- * @access  Private
+ * @access  Private - Branch filtered
  */
 export const clockOut = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -835,6 +912,17 @@ export const clockOut = async (
       return res.status(400).json({
         success: false,
         error: 'Invalid staff_id format'
+      })
+    }
+
+    // Verify staff belongs to user's branch
+    const branchFilter = getBranchFilter(req)
+    const staff = await Staff.findOne({ _id: staff_id, ...branchFilter })
+    if (!staff) {
+      console.log('❌ Clock-out failed: Staff not found or access denied:', staff_id)
+      return res.status(404).json({
+        success: false,
+        error: 'Staff not found or access denied'
       })
     }
 

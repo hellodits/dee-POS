@@ -1,18 +1,20 @@
-import { Request, Response, NextFunction } from 'express'
+import { Response, NextFunction } from 'express'
 import { validationResult } from 'express-validator'
 import { User } from '../models/User'
+import { AuthRequest, getBranchFilter, getUserBranchId } from '../middleware/auth'
 
 /**
  * @desc    Get all users
  * @route   GET /api/users
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Branch filtered
  */
-export const getUsers = async (req: Request, res: Response, next: NextFunction) => {
+export const getUsers = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { role, search, active_only, page = 1, limit = 20 } = req.query
 
-    // Build filter
-    const filter: any = {}
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+    const filter: any = { ...branchFilter }
     
     if (role) filter.role = role
     if (active_only === 'true') filter.isActive = true
@@ -55,16 +57,19 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
 /**
  * @desc    Get single user
  * @route   GET /api/users/:id
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Branch filtered
  */
-export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
+export const getUserById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findById(req.params.id).select('-password')
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+    
+    const user = await User.findOne({ _id: req.params.id, ...branchFilter }).select('-password')
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'User not found'
+        error: 'User not found or access denied'
       })
     }
 
@@ -80,9 +85,9 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
 /**
  * @desc    Create new user
  * @route   POST /api/users
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Auto-assign branch
  */
-export const createUser = async (req: Request, res: Response, next: NextFunction) => {
+export const createUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
@@ -94,6 +99,19 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     }
 
     const { username, email, password, role, firstName, lastName } = req.body
+
+    // Auto-assign branch_id from user's branch (unless creating owner)
+    let branch_id
+    if (role !== 'owner') {
+      try {
+        branch_id = getUserBranchId(req, true)
+      } catch (error: any) {
+        return res.status(400).json({
+          success: false,
+          error: error.message
+        })
+      }
+    }
 
     // Check if user exists
     const existingUser = await User.findOne({ $or: [{ email }, { username }] })
@@ -110,7 +128,8 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
       password,
       role,
       firstName,
-      lastName
+      lastName,
+      branch_id
     })
 
     // Return user without password
@@ -135,9 +154,9 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
 /**
  * @desc    Update user
  * @route   PUT /api/users/:id
- * @access  Private (Admin/Manager)
+ * @access  Private (Admin/Manager) - Branch filtered
  */
-export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
+export const updateUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
@@ -150,15 +169,18 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
 
     const { username, email, password, role, firstName, lastName, isActive } = req.body
 
-    const user = await User.findById(req.params.id)
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+    
+    const user = await User.findOne({ _id: req.params.id, ...branchFilter })
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'User not found'
+        error: 'User not found or access denied'
       })
     }
 
-    // Update fields
+    // Update fields (but not branch_id - cannot change branch)
     if (username) user.username = username
     if (email) user.email = email
     if (password) user.password = password // Will be hashed by pre-save hook
@@ -191,34 +213,37 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
 /**
  * @desc    Delete user
  * @route   DELETE /api/users/:id
- * @access  Private (Admin only)
+ * @access  Private (Admin only) - Branch filtered
  */
-export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const currentUser = (req as any).user
+    const currentUser = req.user
 
-    // Only admin can delete users
-    if (currentUser.role !== 'admin') {
+    // Only admin/owner can delete users
+    if (currentUser?.role !== 'admin' && currentUser?.role !== 'owner') {
       return res.status(403).json({
         success: false,
-        error: 'Only admin can delete users'
+        error: 'Only admin or owner can delete users'
       })
     }
 
     // Prevent self-deletion
-    if (req.params.id === currentUser.id) {
+    if (req.params.id === currentUser?.id) {
       return res.status(400).json({
         success: false,
         error: 'Cannot delete your own account'
       })
     }
 
-    const user = await User.findByIdAndDelete(req.params.id)
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+
+    const user = await User.findOneAndDelete({ _id: req.params.id, ...branchFilter })
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'User not found'
+        error: 'User not found or access denied'
       })
     }
 
@@ -234,27 +259,30 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
 /**
  * @desc    Update user permissions
  * @route   PATCH /api/users/:id/permissions
- * @access  Private (Admin only)
+ * @access  Private (Admin only) - Branch filtered
  */
-export const updateUserPermissions = async (req: Request, res: Response, next: NextFunction) => {
+export const updateUserPermissions = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const currentUser = (req as any).user
+    const currentUser = req.user
 
-    // Only admin can update permissions
-    if (currentUser.role !== 'admin') {
+    // Only admin/owner can update permissions
+    if (currentUser?.role !== 'admin' && currentUser?.role !== 'owner') {
       return res.status(403).json({
         success: false,
-        error: 'Only admin can update permissions'
+        error: 'Only admin or owner can update permissions'
       })
     }
 
     const { permissions } = req.body
 
-    const user = await User.findById(req.params.id)
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+
+    const user = await User.findOne({ _id: req.params.id, ...branchFilter })
     if (!user) {
       return res.status(404).json({
         success: false,
-        error: 'User not found'
+        error: 'User not found or access denied'
       })
     }
 

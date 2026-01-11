@@ -3,14 +3,20 @@ import { Product } from '../models/Product'
 import { InventoryLog } from '../models/InventoryLog'
 import { Types } from 'mongoose'
 import { uploadToCloudinary, deleteFromCloudinary, extractPublicId } from '../config/cloudinary'
+import { AuthRequest, getBranchFilter, getUserBranchId } from '../middleware/auth'
 
 /**
- * @desc    Get all products (with filters for Customer App)
+ * @desc    Get all products (with filters for Customer App or authenticated users)
  * @route   GET /api/products
- * @access  Public
+ * @access  Public (branch_id via query param) OR Private (branch filtered by user)
+ * 
+ * Behavior:
+ * - Unauthenticated: Uses branch_id from query param (for Customer App)
+ * - Authenticated OWNER: No filter (sees all) or uses branch_id query param
+ * - Authenticated non-OWNER: Strictly filtered to user's branch_id
  */
 export const getProducts = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
@@ -19,12 +25,41 @@ export const getProducts = async (
       category, 
       search, 
       active_only = 'true',
+      branch_id,
       page = 1, 
       limit = 50 
     } = req.query
 
     // Build filter - optimized for indexed fields
     const filter: any = {}
+    
+    // Branch filter logic:
+    // 1. If authenticated non-owner user -> strictly filter by their branch
+    // 2. If authenticated owner -> use query param or no filter
+    // 3. If not authenticated -> use query param (for Customer App)
+    if (req.user) {
+      if (req.user.role === 'owner') {
+        // OWNER can filter by branch_id query param or see all
+        if (branch_id && Types.ObjectId.isValid(branch_id as string)) {
+          filter.branch_id = new Types.ObjectId(branch_id as string)
+        }
+        // No branch_id param = see all branches
+      } else {
+        // Non-owner: STRICTLY enforce their branch_id
+        if (!req.user.branch_id) {
+          return res.status(403).json({
+            success: false,
+            error: 'User has no assigned branch'
+          })
+        }
+        filter.branch_id = req.user.branch_id
+      }
+    } else {
+      // Not authenticated - use query param (Customer App)
+      if (branch_id && Types.ObjectId.isValid(branch_id as string)) {
+        filter.branch_id = new Types.ObjectId(branch_id as string)
+      }
+    }
     
     // Customer App should only see active products
     if (active_only === 'true') {
@@ -69,18 +104,21 @@ export const getProducts = async (
 
 /**
  * @desc    Get all products for POS (includes cost_price)
- * @route   GET /api/products/pos
- * @access  Private (POS)
+ * @route   GET /api/products/pos/all
+ * @access  Private (POS) - Branch filtered
  */
 export const getProductsForPOS = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const { category, search, include_inactive } = req.query
 
-    const filter: any = {}
+    // Get branch filter based on user role
+    const branchFilter = getBranchFilter(req)
+    
+    const filter: any = { ...branchFilter }
     
     if (!include_inactive) {
       filter.is_active = true
@@ -144,7 +182,7 @@ export const getProduct = async (
 /**
  * @desc    Get product categories
  * @route   GET /api/products/categories
- * @access  Public
+ * @access  Public (but branch_id can be passed)
  */
 export const getCategories = async (
   req: Request, 
@@ -152,7 +190,15 @@ export const getCategories = async (
   next: NextFunction
 ) => {
   try {
-    const categories = await Product.distinct('category', { is_active: true })
+    const { branch_id } = req.query
+    
+    const filter: any = { is_active: true }
+    
+    if (branch_id && Types.ObjectId.isValid(branch_id as string)) {
+      filter.branch_id = new Types.ObjectId(branch_id as string)
+    }
+
+    const categories = await Product.distinct('category', filter)
 
     res.json({
       success: true,
@@ -170,12 +216,22 @@ export const getCategories = async (
  * @access  Private (POS - Admin/Manager)
  */
 export const createProduct = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     const productData = { ...req.body }
+
+    // Auto-assign branch_id from user's branch (prevents spoofing)
+    try {
+      productData.branch_id = getUserBranchId(req, true)
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      })
+    }
 
     // Handle image upload to Cloudinary
     if (req.file) {
@@ -230,19 +286,22 @@ export const createProduct = async (
  * @access  Private (POS - Admin/Manager)
  */
 export const updateProduct = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
     // Don't allow direct stock updates through this endpoint
-    const { stock, ...updateData } = req.body
+    const { stock, branch_id: _, ...updateData } = req.body
+
+    // Get branch filter to ensure user can only update their branch's products
+    const branchFilter = getBranchFilter(req)
 
     // Handle image upload to Cloudinary
     if (req.file) {
       try {
         // Get old product to delete old image from Cloudinary
-        const oldProduct = await Product.findById(req.params.id)
+        const oldProduct = await Product.findOne({ _id: req.params.id, ...branchFilter })
         if (oldProduct?.image_url) {
           const publicId = extractPublicId(oldProduct.image_url)
           if (publicId) {
@@ -277,8 +336,8 @@ export const updateProduct = async (
       }
     }
 
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, ...branchFilter },
       updateData,
       { new: true, runValidators: true }
     )
@@ -286,7 +345,7 @@ export const updateProduct = async (
     if (!product) {
       return res.status(404).json({
         success: false,
-        error: 'Product not found'
+        error: 'Product not found or access denied'
       })
     }
 
@@ -306,14 +365,17 @@ export const updateProduct = async (
  * @access  Private (POS - Admin)
  */
 export const deleteProduct = async (
-  req: Request, 
+  req: AuthRequest, 
   res: Response, 
   next: NextFunction
 ) => {
   try {
+    // Get branch filter to ensure user can only delete their branch's products
+    const branchFilter = getBranchFilter(req)
+
     // Soft delete - just mark as inactive
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, ...branchFilter },
       { is_active: false },
       { new: true }
     )
@@ -321,7 +383,7 @@ export const deleteProduct = async (
     if (!product) {
       return res.status(404).json({
         success: false,
-        error: 'Product not found'
+        error: 'Product not found or access denied'
       })
     }
 

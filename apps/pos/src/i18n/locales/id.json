@@ -343,6 +343,12 @@
     "failedToLoad": "Gagal memuat data cabang",
     "failedToSave": "Gagal menyimpan cabang",
     "failedToDelete": "Gagal menghapus cabang",
-    "failedToToggle": "Gagal mengubah status cabang"
+    "failedToToggle": "Gagal mengubah status cabang",
+    "selectBranch": "Pilih Cabang",
+    "noBranchSelected": "Pilih Cabang",
+    "noBranchesAvailable": "Tidak ada cabang tersedia",
+    "allBranches": "Semua Cabang",
+    "switchBranch": "Ganti Cabang",
+    "currentBranch": "Cabang Saat Ini"
   }
 }

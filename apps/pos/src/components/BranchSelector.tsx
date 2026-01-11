@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Building2, ChevronDown, Check, MapPin } from 'lucide-react'
 import { useBranch, Branch } from '@/contexts/BranchContext'
 
 export function BranchSelector() {
+  const { t } = useTranslation()
   const { activeBranch, branches, canSwitchBranch, switchBranch, isLoading } = useBranch()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -24,7 +26,7 @@ export function BranchSelector() {
     return (
       <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg animate-pulse">
         <Building2 className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Memuat...</span>
+        <span className="text-sm text-muted-foreground">{t('common.loading')}</span>
       </div>
     )
   }
@@ -34,7 +36,7 @@ export function BranchSelector() {
     return (
       <div className="flex items-center gap-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
         <Building2 className="w-4 h-4 text-yellow-600" />
-        <span className="text-sm text-yellow-600 font-medium">Pilih Cabang</span>
+        <span className="text-sm text-yellow-600 font-medium">{t('branches.noBranchSelected')}</span>
       </div>
     )
   }
@@ -56,21 +58,21 @@ export function BranchSelector() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+        className="flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors w-full"
       >
-        <Building2 className="w-4 h-4 text-primary" />
-        <span className="text-sm font-medium text-primary max-w-[150px] truncate">
+        <Building2 className="w-4 h-4 text-primary flex-shrink-0" />
+        <span className="text-sm font-medium text-primary truncate flex-1 text-left">
           {activeBranch.name}
         </span>
-        <ChevronDown className={`w-4 h-4 text-primary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-4 h-4 text-primary transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="absolute left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
           <div className="px-4 py-3 border-b border-border bg-muted/30">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Pilih Cabang
+              {t('branches.selectBranch')}
             </p>
           </div>
           
@@ -91,7 +93,7 @@ export function BranchSelector() {
           {branches.length === 0 && (
             <div className="px-4 py-6 text-center text-muted-foreground">
               <Building2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Tidak ada cabang tersedia</p>
+              <p className="text-sm">{t('branches.noBranchesAvailable')}</p>
             </div>
           )}
         </div>

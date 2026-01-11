@@ -10,13 +10,13 @@ import {
   updateStock,
   getStockHistory
 } from '../controllers/productController'
-import { protect, authorize, requirePermission } from '../middleware/auth'
+import { protect, authorize, requirePermission, optionalAuth } from '../middleware/auth'
 import { uploadProductImage } from '../middleware/upload'
 
 const router = Router()
 
-// Public routes (Customer App)
-router.get('/', getProducts)
+// Public routes (Customer App) - optionalAuth allows branch filtering for authenticated users
+router.get('/', optionalAuth, getProducts)
 router.get('/categories', getCategories)
 router.get('/:id', getProduct)
 

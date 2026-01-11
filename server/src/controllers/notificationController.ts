@@ -1,4 +1,5 @@
-import { Request, Response, NextFunction } from 'express'
+import { Response, NextFunction } from 'express'
+import { AuthRequest, getBranchFilter } from '../middleware/auth'
 import {
   getNotifications,
   markAsRead,
@@ -6,14 +7,10 @@ import {
   deleteNotification
 } from '../services/notificationService'
 
-interface AuthRequest extends Request {
-  user?: { id: string }
-}
-
 /**
  * @desc    Get all notifications for current user
  * @route   GET /api/notifications
- * @access  Private
+ * @access  Private - Branch filtered
  */
 export const getAllNotifications = async (
   req: AuthRequest,
@@ -22,11 +19,12 @@ export const getAllNotifications = async (
 ) => {
   try {
     const userId = req.user?.id
+    const branchFilter = getBranchFilter(req)
     const page = Number(req.query.page) || 1
     const limit = Number(req.query.limit) || 50
     const unread_only = req.query.unread_only === 'true'
 
-    const result = await getNotifications(userId, { page, limit, unread_only })
+    const result = await getNotifications(userId, { page, limit, unread_only }, branchFilter)
 
     res.json({
       success: true,
@@ -42,7 +40,7 @@ export const getAllNotifications = async (
 /**
  * @desc    Mark notification as read
  * @route   PATCH /api/notifications/:id/read
- * @access  Private
+ * @access  Private - Branch filtered
  */
 export const markNotificationAsRead = async (
   req: AuthRequest,
@@ -51,12 +49,13 @@ export const markNotificationAsRead = async (
 ) => {
   try {
     const userId = req.user?.id
-    const notification = await markAsRead(req.params.id, userId)
+    const branchFilter = getBranchFilter(req)
+    const notification = await markAsRead(req.params.id, userId, branchFilter)
 
     if (!notification) {
       res.status(404).json({
         success: false,
-        error: 'Notification not found'
+        error: 'Notification not found or access denied'
       })
       return
     }
@@ -73,7 +72,7 @@ export const markNotificationAsRead = async (
 /**
  * @desc    Mark all notifications as read
  * @route   PATCH /api/notifications/read-all
- * @access  Private
+ * @access  Private - Branch filtered
  */
 export const markAllNotificationsAsRead = async (
   req: AuthRequest,
@@ -82,7 +81,8 @@ export const markAllNotificationsAsRead = async (
 ) => {
   try {
     const userId = req.user?.id
-    const result = await markAllAsRead(userId)
+    const branchFilter = getBranchFilter(req)
+    const result = await markAllAsRead(userId, branchFilter)
 
     res.json({
       success: true,
@@ -96,7 +96,7 @@ export const markAllNotificationsAsRead = async (
 /**
  * @desc    Delete a notification
  * @route   DELETE /api/notifications/:id
- * @access  Private
+ * @access  Private - Branch filtered
  */
 export const removeNotification = async (
   req: AuthRequest,
@@ -105,12 +105,13 @@ export const removeNotification = async (
 ) => {
   try {
     const userId = req.user?.id
-    const notification = await deleteNotification(req.params.id, userId)
+    const branchFilter = getBranchFilter(req)
+    const notification = await deleteNotification(req.params.id, userId, branchFilter)
 
     if (!notification) {
       res.status(404).json({
         success: false,
-        error: 'Notification not found'
+        error: 'Notification not found or access denied'
       })
       return
     }
